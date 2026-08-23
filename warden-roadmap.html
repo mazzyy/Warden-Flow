@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Warden — Roadmap</title>
+<style>
+  :root{
+    --bg:#EEF1F5; --panel:#fff; --ink:#14181D; --mut:#6B7684; --line:#DBE1E8;
+    --blue:#2563EB; --violet:#6D28D9; --amber:#B45309; --green:#047857; --red:#DC2626;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .page{max-width:1080px;margin:0 auto;padding:28px 20px 80px}
+
+  header.top{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 26px;
+    box-shadow:0 1px 3px rgba(16,24,40,.06);margin-bottom:18px}
+  h1{margin:0 0 4px;font-size:24px;letter-spacing:-.3px}
+  .sub{color:var(--mut);font-size:13.5px;margin:0}
+  .kpis{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+  .kpi{flex:1 1 140px;background:#F7F9FC;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .kpi .n{font-size:22px;font-weight:750;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .kpi .l{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:1px;font-weight:650;margin-top:2px}
+  .kpi.ok .n{color:var(--green)} .kpi.warn .n{color:var(--amber)} .kpi.crit .n{color:var(--red)}
+  .bar{height:7px;border-radius:4px;background:#E3E8EE;overflow:hidden;margin-top:12px}
+  .bar>i{display:block;height:100%;background:var(--green);border-radius:4px}
+
+  .note{background:#FEF6EC;border:1px solid #EBCF9F;border-radius:12px;padding:16px 20px;
+    margin-bottom:18px;font-size:13.5px;color:#7A3908}
+  .note b{color:#5C2B06}
+  .note.blocked{background:#FDF6F6;border-color:#F0C9C9;color:#7F1D1D}
+  .note.blocked b{color:#991B1B}
+
+  section.blk{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:20px 22px;margin-bottom:16px;box-shadow:0 1px 3px rgba(16,24,40,.05)}
+  section.blk > h2{margin:0 0 3px;font-size:16px;letter-spacing:-.2px}
+  section.blk > .cap{color:var(--mut);font-size:12.5px;margin:0 0 14px}
+
+  .doneGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:7px}
+  .doneItem{display:flex;gap:8px;align-items:flex-start;background:#F4F8F6;border:1px solid #CBE5D9;
+    border-radius:8px;padding:8px 11px;font-size:12.5px}
+  .doneItem .id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:10.5px;
+    font-weight:700;color:var(--green);flex:none;padding-top:1px}
+
+  .day{display:flex;gap:14px;padding:14px 0;border-top:1px solid var(--line)}
+  .day:first-of-type{border-top:none}
+  .dcol{flex:0 0 92px;text-align:right}
+  .dcol .dn{font-size:14px;font-weight:750;letter-spacing:-.2px}
+  .dcol .dd{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.7px;font-weight:650}
+  .dcol .dh{font-size:11px;color:var(--mut);margin-top:3px;font-variant-numeric:tabular-nums}
+  .dbody{flex:1;min-width:0}
+  .dgoal{font-size:12.5px;color:var(--mut);font-style:italic;margin:0 0 8px}
+  ul.items{list-style:none;margin:0;padding:0}
+  ul.items li{display:flex;gap:9px;align-items:flex-start;padding:5px 0;font-size:13px}
+  .mk{flex:none;width:15px;text-align:center;font-weight:700;padding-top:1px;font-size:12px}
+  .mk.todo{color:var(--mut)} .mk.done{color:var(--green)}
+  .mk.you{color:var(--blue)} .mk.block{color:var(--red)}
+  li .who{font-size:9.5px;font-weight:750;letter-spacing:.5px;padding:1.5px 6px;border-radius:4px;
+    flex:none;margin-left:auto;white-space:nowrap}
+  .who.you{background:#EAF0FE;color:#1D4FD8}
+  .who.me{background:#F1F0F6;color:#6D28D9}
+  .who.both{background:#FEF3E2;color:#92400E}
+  .badge{display:inline-block;font-size:9.5px;font-weight:750;letter-spacing:.6px;
+    padding:2px 7px;border-radius:5px;margin-left:8px;vertical-align:2px}
+  .badge.now{background:#EAF0FE;color:#1D4FD8}
+  .badge.freeze{background:#FDE8E8;color:#B91C1C}
+  .badge.ship{background:#DFF3E9;color:#046049}
+  .day.hi{background:#FBFAFE;margin:0 -12px;padding-left:12px;padding-right:12px;border-radius:10px}
+
+  .foot{color:var(--mut);font-size:12px;margin-top:22px;text-align:center}
+  @media(max-width:620px){
+    .day{flex-direction:column;gap:6px}
+    .dcol{text-align:left;flex:none}
+    li .who{margin-left:0}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="top">
+  <h1>Warden — Roadmap</h1>
+  <p class="sub">All Things Agentic Hackathon · Fortified Enterprise Fleet · solo</p>
+  <div class="kpis">
+    <div class="kpi crit"><div class="n" id="k-days">—</div><div class="l">Days to deadline</div></div>
+    <div class="kpi ok"><div class="n">21</div><div class="l">Stories done</div></div>
+    <div class="kpi warn"><div class="n">~22h</div><div class="l">MUST remaining</div></div>
+    <div class="kpi"><div class="n">57%</div><div class="l">MUST complete</div></div>
+  </div>
+  <div class="bar"><i style="width:57%"></i></div>
+</header>
+
+<div class="note">
+  <b>Where you actually are.</b> Ahead on code, behind on cloud. Every agent, the
+  policy proxy, the control plane and both repos are written and tested — but
+  until tonight nothing had touched a real cluster or a real Gemini call. That
+  asymmetry is why the first half went fast and the second half won't: what
+  remains is mostly deployment, and deployment fails in ways that cost evenings.
+</div>
+
+<div class="note blocked">
+  <b>One thing still blocks the entire Google side.</b>
+  <code>gcloud billing projects describe gen-lang-client-0473437618</code> —
+  a <code>gen-lang-client-*</code> project comes from AI Studio and usually has no
+  billing linked. Without it, Firestore, Cloud Run and Vertex all fail with errors
+  that never mention billing. Ten seconds, open since Thursday.
+</div>
+
+<section class="blk">
+  <h2>Done — 21 stories</h2>
+  <p class="cap">All of it runs offline: no cluster, no key, no spend. That was deliberate, and it is why CI can run the whole incident loop on every push.</p>
+  <div class="doneGrid">
+    <div class="doneItem"><span class="id">W-103</span><span><b>Policy proxy</b> — ADK plugin, blocks in-process</span></div>
+    <div class="doneItem"><span class="id">W-104</span><span>Audit log — every call and denial</span></div>
+    <div class="doneItem"><span class="id">W-105</span><span>Budget ledger — real usage_metadata</span></div>
+    <div class="doneItem"><span class="id">W-101</span><span>Firestore schemas + store layer</span></div>
+    <div class="doneItem"><span class="id">W-102</span><span>Agent manifest registry</span></div>
+    <div class="doneItem"><span class="id">W-108</span><span>Policy probe — the agent × tool matrix</span></div>
+    <div class="doneItem"><span class="id">W-109</span><span>Preflight doctor</span></div>
+    <div class="doneItem"><span class="id">W-301</span><span>Triage agent</span></div>
+    <div class="doneItem"><span class="id">W-303</span><span>Diagnostician agent</span></div>
+    <div class="doneItem"><span class="id">W-402</span><span>Remediator agent</span></div>
+    <div class="doneItem"><span class="id">W-302</span><span>Read-only estate tools</span></div>
+    <div class="doneItem"><span class="id">W-401</span><span>GitHub client + propose_patch</span></div>
+    <div class="doneItem"><span class="id">W-202</span><span>EstateAdapter + AksAdapter</span></div>
+    <div class="doneItem"><span class="id">W-304</span><span>Fixtures — free offline iteration</span></div>
+    <div class="doneItem"><span class="id">W-206</span><span>estate-gitops — app, RBAC, injection</span></div>
+    <div class="doneItem"><span class="id">W-203</span><span>Bad-config injection (real crashloop)</span></div>
+    <div class="doneItem"><span class="id">W-204</span><span>OOM injection (real OOMKill)</span></div>
+    <div class="doneItem"><span class="id">W-207</span><span>Terraform — both clouds</span></div>
+    <div class="doneItem"><span class="id">W-003</span><span>Repo scaffold + CI + README</span></div>
+    <div class="doneItem"><span class="id">W-004</span><span>IP check — closed, left Siemens</span></div>
+    <div class="doneItem"><span class="id">W-201</span><span>AKS cluster — applying now</span></div>
+  </div>
+</section>
+
+<section class="blk">
+  <h2>The remaining nine days</h2>
+  <p class="cap">Rebalanced from the original plan: code is ahead, so the weekend goes to deployment and the first live run instead of building agents.</p>
+
+  <div class="day hi">
+    <div class="dcol"><div class="dn">Fri 21</div><div class="dd">Aug</div><div class="dh">3h</div></div>
+    <div class="dbody">
+      <p class="dgoal">Get the estate real. <span class="badge now">NEXT</span></p>
+      <ul class="items">
+        <li><span class="mk todo">○</span><span>Finish <code>terraform apply</code> — AKS with D2s_v7</span><span class="who you">you</span></li>
+        <li><span class="mk todo">○</span><span>Apply <code>estate-gitops</code>: namespace, RBAC, checkout-svc</span><span class="who you">you</span></li>
+        <li><span class="mk todo">○</span><span><b>Capture the two Forbidden outputs</b> — reader token can't delete, PAT can't push to main. These are video assets, not just tests.</span><span class="who you">you</span></li>
+        <li><span class="mk block">!</span><span>Confirm GCP billing, then <code>terraform apply</code> the GCP side</span><span class="who you">you</span></li>
+        <li><span class="mk todo">○</span><span>Push AKS token + apiserver into Secret Manager, flip <code>ESTATE_ADAPTER=aks</code></span><span class="who you">you</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="day">
+    <div class="dcol"><div class="dn">Sat 22</div><div class="dd">Aug</div><div class="dh">8h</div></div>
+    <div class="dbody">
+      <p class="dgoal">First live incident against a real cluster.</p>
+      <ul class="items">
+        <li><span class="mk todo">○</span><span>Dashboard: fleet, incidents, run detail with the denial visible <span style="color:var(--mut)">W-601/602</span></span><span class="who me">me</span></li>
+        <li><span class="mk todo">○</span><span>Kill switch + <code>/healthz</code> <span style="color:var(--mut)">W-603, W-107</span></span><span class="who me">me</span></li>
+        <li><span class="mk todo">○</span><span>Pub/Sub push handler + alert bridge <span style="color:var(--mut)">W-205</span></span><span class="who me">me</span></li>
+        <li><span class="mk todo">○</span><span>Deploy to Cloud Run <span style="color:var(--mut)">W-005</span></span><span class="who both">both</span></li>
+        <li><span class="mk todo">○</span><span><b>Break checkout-svc for real and watch a PR appear.</b> Record a 30s clip.</span><span class="who you">you</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="day">
+    <div class="dcol"><div class="dn">Sun 23</div><div class="dd">Aug</div><div class="dh">8h</div></div>
+    <div class="dbody">
+      <p class="dgoal">Close the loop and make it look like it has been running for months.</p>
+      <ul class="items">
+        <li><span class="mk todo">○</span><span>Verifier wired into the orchestrator <span style="color:var(--mut)">W-403</span></span><span class="who me">me</span></li>
+        <li><span class="mk todo">○</span><span>Memory Bank + <code>recall_similar_incidents</code> <span style="color:var(--mut)">W-502/503</span></span><span class="who me">me</span></li>
+        <li><span class="mk todo">○</span><span>OpenTelemetry → Cloud Trace, one tree per incident <span style="color:var(--mut)">W-501</span></span><span class="who me">me</span></li>
+        <li><span class="mk todo">○</span><span>Seed data so a judge never lands on an empty page <span style="color:var(--mut)">W-604</span></span><span class="who me">me</span></li>
+        <li><span class="mk todo">○</span><span>Devpost draft submission <span style="color:var(--mut)">W-001</span> — 30 min, removes all last-hour risk</span><span class="who you">you</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="day">
+    <div class="dcol"><div class="dn">Mon 24<br>– Wed 26</div><div class="dd">Aug</div><div class="dh">7h</div></div>
+    <div class="dbody">
+      <p class="dgoal">Harden and rehearse. No new features after Wednesday.</p>
+      <ul class="items">
+        <li><span class="mk todo">○</span><span>Retries, circuit breaker, error paths <span style="color:var(--mut)">W-106</span></span><span class="who me">me</span></li>
+        <li><span class="mk todo">○</span><span>Gemma for the triage classifier <span style="color:var(--mut)">W-708 · bonus 0.6</span></span><span class="who me">me</span></li>
+        <li><span class="mk todo">○</span><span><b>Run the break-fix end to end three times.</b> Every failure now is one you don't hit on camera.</span><span class="who you">you</span></li>
+        <li><span class="mk todo">○</span><span>Review the agent prompts in <code>definitions.py</code> — your SRE judgment beats mine here</span><span class="who you">you</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="day">
+    <div class="dcol"><div class="dn">Thu 27</div><div class="dd">Aug</div><div class="dh">2.5h</div></div>
+    <div class="dbody">
+      <p class="dgoal">Last webinar, last polish.</p>
+      <ul class="items">
+        <li><span class="mk todo">○</span><span>Agent Memory Architecture webinar — lands the same day as the memory work</span><span class="who you">you</span></li>
+        <li><span class="mk todo">○</span><span>Cloud credit form closes <b>28 Aug 12:00 PT</b> — if the $150 hasn't landed, chase it</span><span class="who you">you</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="day">
+    <div class="dcol"><div class="dn">Fri 28</div><div class="dd">Aug</div><div class="dh">3h</div></div>
+    <div class="dbody">
+      <p class="dgoal">Feature freeze. <span class="badge freeze">HARD DATE</span></p>
+      <ul class="items">
+        <li><span class="mk todo">○</span><span><b>Stop building.</b> Anything unfinished is now cut, not rushed.</span><span class="who both">both</span></li>
+        <li><span class="mk todo">○</span><span>Blog post <span style="color:var(--mut)">W-706 · bonus 0.2</span> — also your best portfolio asset</span><span class="who you">you</span></li>
+        <li><span class="mk todo">○</span><span>Billing alerts verified on both clouds; hosted URL confirmed live</span><span class="who you">you</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="day hi">
+    <div class="dcol"><div class="dn">Sat 29</div><div class="dd">Aug</div><div class="dh">8h</div></div>
+    <div class="dbody">
+      <p class="dgoal">The video. Budget the whole day — it always takes 3–4× longer than anyone expects.</p>
+      <ul class="items">
+        <li><span class="mk todo">○</span><span>Script to time, then <b>three dry runs</b> before recording <span style="color:var(--mut)">W-704</span></span><span class="who you">you</span></li>
+        <li><span class="mk todo">○</span><span>Record ≤4 min, <b>unedited live execution</b>, Google Cloud console proof, subtitles <span style="color:var(--mut)">W-705</span></span><span class="who you">you</span></li>
+        <li><span class="mk todo">○</span><span>README verified from a fresh clone in a clean directory <span style="color:var(--mut)">W-702</span></span><span class="who both">both</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="day hi">
+    <div class="dcol"><div class="dn">Sun 30</div><div class="dd">Aug</div><div class="dh">4h</div></div>
+    <div class="dbody">
+      <p class="dgoal">Submit — a full day early. <span class="badge ship">SHIP</span></p>
+      <ul class="items">
+        <li><span class="mk todo">○</span><span>Final architecture diagram <span style="color:var(--mut)">W-703</span></span><span class="who me">me</span></li>
+        <li><span class="mk todo">○</span><span>Social post <code>#AllThingsAgenticHackathon</code> <span style="color:var(--mut)">W-707 · bonus 0.2</span></span><span class="who you">you</span></li>
+        <li><span class="mk todo">○</span><span><b>Submit on Devpost</b> <span style="color:var(--mut)">W-709</span></span><span class="who you">you</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="day">
+    <div class="dcol"><div class="dn">Mon 31</div><div class="dd">Aug</div><div class="dh">—</div></div>
+    <div class="dbody">
+      <p class="dgoal">Buffer only. Do not plan to build. Deadline is 02:00 CEST on the 1st.</p>
+    </div>
+  </div>
+</section>
+
+<div class="note">
+  <b>The critical path runs through Saturday the 29th, not the deadline.</b>
+  The video is 30% of the score and the rules forbid editing around a failure, so
+  it needs a system that works reliably three times in a row — which means the
+  real work ends Wednesday, not Sunday. Everything after the 28th is packaging.
+  <br><br>
+  <b>Judging runs 1 Sept – 1 Oct.</b> Your hosted URL has to survive all of it.
+  Set a calendar reminder for <b>28 Sept</b> to check it — a dead link during
+  judging is the failure most likely to quietly cost you a prize, precisely
+  because you won't be watching.
+</div>
+
+<p class="foot">Deadline 31 Aug 17:00 PDT = 1 Sep 02:00 CEST · target submit Sun 30 Aug</p>
+</div>
+
+<script>
+(function(){
+  var el = document.getElementById('k-days');
+  if (!el) return;
+  var d = Math.max(0, Math.ceil((Date.parse('2026-09-01T00:00:00Z') - Date.now()) / 864e5));
+  el.textContent = d;
+})();
+</script>
+</body>
+</html>

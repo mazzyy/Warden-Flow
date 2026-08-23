@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Warden — Sprint Board</title>
+<style>
+  :root{
+    --bg:#EEF1F5; --panel:#fff; --ink:#14181D; --mut:#6B7684; --line:#DBE1E8;
+    --blue:#2563EB; --violet:#6D28D9; --amber:#B45309; --green:#047857; --red:#DC2626;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .page{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+
+  header.top{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px 26px;
+    box-shadow:0 1px 3px rgba(16,24,40,.06);margin-bottom:20px}
+  h1{margin:0 0 4px;font-size:24px;letter-spacing:-.3px}
+  .sub{color:var(--mut);font-size:13.5px;margin:0}
+  .kpis{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+  .kpi{flex:1 1 150px;background:#F7F9FC;border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .kpi .n{font-size:22px;font-weight:750;letter-spacing:-.5px;font-variant-numeric:tabular-nums}
+  .kpi .l{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:1px;font-weight:650;margin-top:2px}
+  .kpi.warn .n{color:var(--amber)} .kpi.crit .n{color:var(--red)} .kpi.ok .n{color:var(--green)}
+
+  .bar{height:7px;border-radius:4px;background:#E3E8EE;overflow:hidden;margin-top:10px}
+  .bar>i{display:block;height:100%;background:var(--green);border-radius:4px;transition:width .25s ease}
+
+  .controls{display:flex;gap:8px;align-items:center;margin:0 0 18px;flex-wrap:wrap}
+  button{font:inherit;font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:8px;
+    border:1px solid var(--line);background:var(--panel);color:var(--ink);cursor:pointer}
+  button:hover{background:#F7F9FC}
+  button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+  button.ghost{color:var(--mut)}
+
+  section.sprint{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:20px 22px;margin-bottom:16px;box-shadow:0 1px 3px rgba(16,24,40,.05)}
+  .shead{display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap}
+  .shead h2{margin:0;font-size:17px;letter-spacing:-.2px}
+  .shead .when{color:var(--mut);font-size:12.5px;font-weight:600}
+  .goal{margin:8px 0 0;font-size:13px;color:var(--mut);font-style:italic}
+  .gate{margin:12px 0 0;padding:10px 13px;border-radius:9px;font-size:12.5px;
+    background:#FEF6EC;border:1px solid #EBCF9F;color:#7A3908}
+  .gate b{color:#5C2B06}
+
+  ul.stories{list-style:none;margin:16px 0 0;padding:0}
+  li.story{display:flex;gap:12px;padding:11px 12px;border:1px solid var(--line);
+    border-radius:10px;margin-bottom:7px;background:#FCFDFE;align-items:flex-start}
+  li.story.done{background:#F4F8F6;border-color:#CBE5D9}
+  li.story.done .t{text-decoration:line-through;color:var(--mut)}
+  input[type=checkbox]{width:17px;height:17px;margin-top:2px;accent-color:var(--green);cursor:pointer;flex:none}
+  .meta{flex:1;min-width:0}
+  .l1{display:flex;gap:9px;align-items:baseline;flex-wrap:wrap}
+  .id{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px;font-weight:700;color:var(--blue);flex:none}
+  .t{font-size:13.5px;font-weight:620}
+  .ac{font-size:12px;color:var(--mut);margin-top:3px}
+  .tags{display:flex;gap:5px;align-items:center;flex:none;flex-wrap:wrap;justify-content:flex-end}
+  .tag{font-size:9.5px;font-weight:750;letter-spacing:.5px;padding:2.5px 7px;border-radius:5px;white-space:nowrap}
+  .must{background:#FDE8E8;color:#B91C1C}
+  .should{background:#FEF3E2;color:#92400E}
+  .could{background:#EEF2F7;color:#5B6673}
+  .wont{background:#F1F0F6;color:#6D28D9}
+  .est{background:#EAF0FE;color:#1D4FD8}
+  .epic{background:#F4F6F9;color:#5B6673}
+
+  .cut{background:var(--panel);border:1px solid #F0C9C9;border-radius:14px;padding:20px 22px;margin-top:22px}
+  .cut h2{margin:0 0 4px;font-size:17px;color:var(--red)}
+  .cut ol{margin:12px 0 0;padding-left:22px;font-size:13.5px}
+  .cut li{margin-bottom:7px}
+  .cut .never{margin-top:14px;padding:11px 13px;background:#FDF6F6;border-radius:9px;font-size:12.5px;color:#7F1D1D}
+  .foot{color:var(--mut);font-size:12px;margin-top:24px;text-align:center}
+  @media(max-width:640px){.tags{justify-content:flex-start;margin-top:5px}}
+</style>
+</head>
+<body>
+<div class="page">
+
+<header class="top">
+  <h1>Warden — Sprint Board</h1>
+  <p class="sub">All Things Agentic Hackathon · Fortified Enterprise Fleet · solo · ~40h capacity</p>
+  <p class="sub" style="margin-top:6px"><b>Code is written and tested. Nothing is deployed.</b> Everything green below runs offline against a fake estate — no cluster, no Gemini call, no Cloud Run.</p>
+  <div class="kpis">
+    <div class="kpi"><div class="n" id="k-days">—</div><div class="l">Days to deadline</div></div>
+    <div class="kpi ok"><div class="n" id="k-done">0h</div><div class="l">Hours logged</div></div>
+    <div class="kpi warn"><div class="n" id="k-left">—</div><div class="l">MUST hours left</div></div>
+    <div class="kpi"><div class="n" id="k-pct">0%</div><div class="l">MUST complete</div></div>
+  </div>
+  <div class="bar"><i id="k-bar" style="width:0%"></i></div>
+</header>
+
+<div class="controls">
+  <button id="f-all" class="on">All stories</button>
+  <button id="f-must">MUST only</button>
+  <button id="f-open">Not done</button>
+  <span style="flex:1"></span>
+  <button id="reset" class="ghost">Reset board</button>
+</div>
+
+<div id="board"></div>
+
+<div class="cut">
+  <h2>Cut list — execute at the Thursday 27 Aug gate</h2>
+  <p class="sub">MUST scope is ~47h against 40h capacity — an 18% overcommit. The cut list is no longer a contingency: <b>plan on executing at least items 1 and 2.</b></p>
+  <ol>
+    <li><b>Dashboard read-only</b> — drop the kill-switch UI, trigger it via API on camera. <i>−1.5h</i></li>
+    <li><b>Diagnostician drops to two tools</b> — logs and recent deploys carry the bad-config scene. <i>−1h</i></li>
+    <li><b>One failure injection only.</b> <i>−0.5h</i></li>
+    <li><b>Drop the Verifier</b> (W-403/404) — you merge, the service recovers, you narrate it. <i>−3.5h</i></li>
+    <li><b>Drop the EstateAdapter</b>, code straight against the k8s client — accepts migration debt, so take it last. <i>−1h</i></li>
+    <li><b>Drop the blog post</b> — costs 0.2 bonus. Cut this before anything that appears on camera. <i>−1.5h</i></li>
+  </ol>
+  <div class="never"><b>Never cut:</b> the policy proxy and its denial (W-103/104), the video (W-705), the README (W-702), the architecture diagram (W-703), the Devpost submission (W-709). The last four are pass/fail in stage one — a brilliant project that fails stage one scores zero.</div>
+</div>
+
+<p class="foot">Deadline 31 Aug 17:00 PDT = 1 Sep 02:00 CEST · target submit Sun 30 Aug · progress saves in this browser</p>
+</div>
+
+<script>
+const SPRINTS = [
+  {id:0,name:"Sprint 0 · Foundations",when:"Thu 20 – Fri 21 Aug · 5h",
+   goal:"An event travels from your laptop to Firestore through a deployed agent.",
+   gate:"<b>Exit gate:</b> walking skeleton green. If it isn't, Saturday starts by finishing it and Sprint 1 loses 2h — adjust immediately rather than hoping."},
+  {id:1,name:"Sprint 1 · Spine and perception",when:"Sat 22 – Sun 23 Aug · 16h",
+   goal:"An injected failure becomes an audited, triaged, diagnosed incident.",
+   gate:"<b>Exit gate (Sun evening):</b> break the service → an incident exists with a complete audit trail. <b>Record a 30-second clip.</b> Do this every sprint and you arrive at Saturday's shoot with b-roll already in hand."},
+  {id:2,name:"Sprint 2 · Closing the loop",when:"Mon 24 – Thu 27 Aug · 10h",
+   goal:"An alert produces a real pull request, with no human in the loop.",
+   gate:"<b>Exit gate (Thu 27, ~22:00) — the decision point of the project.</b> Does an injected failure produce a correct PR end to end? If no, execute the cut list now. Do not spend Friday debugging: Saturday belongs to the video and cannot be borrowed against."},
+  {id:3,name:"Sprint 3 · Ship",when:"Fri 28 – Sun 30 Aug · 15h",
+   goal:"Submitted, a day early.",
+   gate:"<b>Feature freeze Friday 28th is the most important date in this plan.</b> Every hackathon post-mortem says the same thing: the video takes 3–4× longer than expected, and the people who lose are still writing features on the final Saturday."},
+  {id:9,name:"Backlog · Stretch",when:"only if Sprint 3 is safe",
+   goal:"Do not start any of this before the submission is locked.",gate:""}
+];
+
+const S = [
+  ["W-001","Devpost registration and draft submission","E1",0,0.5,"must","Draft exists and is editable · category selected · reminder set for 30 Aug"],
+  ["W-002","Cloud accounts and guardrails","E1",0,1,"must","Runbook §1–§10. Budget guards FIRST · $5 GCP budget with a test email actually received · Azure budget set. Traps: percent= takes a fraction (0.50 not 50); Firestore location is permanent"],
+  ["W-003","Repo scaffold — warden + estate-gitops","E1",0,0.5,"must","First commit dated after 3 Aug (rules) · CI lints on push"],
+  ["W-004","Employer IP check","E1",0,0.25,"must","Decision recorded in docs/adr/. If ambiguous, ask before building further"],
+  ["W-005","SPIKE — walking skeleton","E1",0,2.5,"must","Pub/Sub → ADK agent on Cloud Run → Firestore doc within 30s. Hard timebox 2.5h; fall back to plain Cloud Run if it fights you"],
+
+  ["W-201","AKS cluster and demo workload","E3",1,2,"must","kubectl green · workload reachable · manifests live in estate-gitops"],
+  ["W-205","Alert bridge → Pub/Sub","E3",1,1,"must","Breaking the service publishes a well-formed event within 60s. A polling watcher is fine — don't gold-plate"],
+  ["W-101","Firestore schemas and repository layer","E2",1,2,"must","Round-trips for incidents, runs, audit · no raw Firestore calls outside the repository module"],
+  ["W-102","Agent manifest spec and loader","E2",1,1.5,"must","registry sync loads four manifests · unknown tool fails loudly with its name"],
+  ["W-103","Policy tool proxy","E2",1,2.5,"must","Allowed call dispatches · out-of-scope call denied with the missing scope named · unit test asserts the denial. THIS STORY IS THE PROJECT"],
+  ["W-104","Audit log","E2",1,1,"must","Ordered queryable trail · denials record reasons · nothing can write a tool call without an audit record"],
+  ["W-202","EstateAdapter + AksAdapter","E3",1,2,"must","All six methods return real data from Cloud Run · prove the SA token cannot mutate — keep the failing kubectl delete output for the video"],
+  ["W-302","Read-only tool implementations","E4",1,2,"must","logs · describe · deploys · metrics — each callable via proxy, each denied without scope"],
+  ["W-203","Failure injection — bad config","E3",1,1,"must","One command breaks it, one restores it, five consecutive clean runs. This is the hero scene"],
+  ["W-304","Fixture recorder and replayer","E4",1,1.5,"should","Off by default. Do this early if the $150 hasn't landed — pays for itself within a day"],
+
+  ["W-108","Policy probe — the agent x tool matrix","E2",1,1,"should","python -m warden.probe. The honest denial demo: you cannot reliably make a well-prompted model attempt a tool it was told it lacks, so ask the policy engine directly. Runs in CI as --assert-no-cluster-writes"],
+  ["W-109","Preflight doctor","E1",0,0.5,"should","make doctor — what is configured, what is missing, what you can run right now. Also caught the trap where a key in .env never reaches the SDK"],
+  ["W-206","estate-gitops repo","E3",1,2.5,"must","checkout-svc with two REAL failure modes (verified: exits 1 / OOMKills), manifests, read-only RBAC, inject.sh, GitOps sync workflow. Log line is byte-identical to the fake estate"],
+  ["W-401","GitHub integration and propose_patch","E5",2,2,"must","Opens a real PR with title, body, diff · token cannot push to main — verify. Mechanical work: do it on a tired evening"],
+  ["W-301","Triage agent","E4",2,2,"must","Duplicates collapse into one incident · low-severity closes without escalating · reasoning persisted"],
+  ["W-303","Diagnostician agent","E4",2,3,"must","Identifies the offending env var, cites log lines and the deploy that introduced it · three consecutive clean runs"],
+  ["W-402","Remediator agent","E5",2,2.5,"must","PR reverts exactly the offending value · body explains reasoning and links the incident · respects maxFilesPerPatch"],
+  ["W-105","Budget ledger","E2",2,1.5,"should","Run exceeding maxToolCalls halts as budget_exceeded rather than crashing"],
+  ["W-403","Verifier agent","E5",2,2,"should","Post-merge SLO watch, then close or escalate"],
+  ["W-502","Memory Bank writes","E6",2,1.5,"should","Persist incident resolutions. The 27 Aug webinar covers exactly this"],
+  ["W-503","recall_similar_incidents","E6",2,1.5,"should","Triage dedupe backed by memory — makes the fleet look like it's been running for months"],
+  ["W-501","OpenTelemetry → Cloud Trace","E6",2,2,"should","One trace tree per incident. Screenshot it: strong architecture evidence for very little work"],
+  ["W-204","Failure injection — OOMKill","E3",2,0.5,"should",""],
+  ["W-106","Circuit breaker","E2",2,1,"could","Open after N failures, cool down, half-open retry"],
+  ["W-404","Auto-revert on failed verification","E5",2,1.5,"could",""],
+
+  ["W-701","Feature freeze and hardening","E8",3,2,"must","Fri 28 Aug — non-negotiable date"],
+  ["W-107","Fleet health and credential monitor","E2",3,1.5,"must","/healthz probes GitHub token, estate, Vertex, budget burn, Firestore — live probes not expiry parsing. Uptime check emails you. Also guards the demo URL through the Sept 1 – Oct 1 judging window"],
+  ["W-601","Fleet and incident views","E7",3,2,"must","Agents with manifests and budgets · incidents with status · cold load under 2s"],
+  ["W-602","Run detail view","E7",3,2,"must","THE DENIAL MUST BE VISUALLY OBVIOUS — this screen is the Best Architectural Design pitch. Polish here, not the fleet list"],
+  ["W-603","Kill switch","E7",3,1,"must","Toggling mid-incident halts the run and records why"],
+  ["W-604","Seed data","E7",3,0.5,"should","Three resolved incidents so a judge doesn't land on an empty page"],
+  ["W-704","Video script and three dry runs","E8",3,2,"must","Script to time. Any dry-run failure means fix or simplify the scene — don't hope"],
+  ["W-705","Record and cut the video","E8",3,3,"must","≤4 min · unedited live execution · Google Cloud console proof · English subtitles"],
+  ["W-702","README with tested spin-up","E8",3,2,"must","Follow your own README from a fresh clone in a clean directory. Actually do this"],
+  ["W-706","Blog post","E8",3,1.5,"should","Bonus 0.2 · angle: I gave an AI agent zero production credentials and it fixed the outage anyway"],
+  ["W-703","Final architecture diagram","E8",3,1,"must",""],
+  ["W-707","Social post","E8",3,0.25,"should","Bonus 0.2 · #AllThingsAgenticHackathon"],
+  ["W-708","Gemma triage classifier","E8",3,1.5,"should","Bonus up to 0.6, and a genuine cost-architecture improvement"],
+  ["W-709","Finalise Devpost submission","E8",3,1,"must","Repo access for testing@devpost.com and cloudhackathons@google.com if private"],
+
+  ["W-801","Drift agent — ClickOps → Terraform PR","E9",9,6,"could","The Terraform idea, on Cloud Scheduler. Only if Sprint 3 is locked"],
+  ["W-802","Third failure injection","E9",9,1,"could",""],
+  ["W-804","Approval-gate UI","E9",9,2,"could",""],
+  ["W-803","Multi-tenant estate","E9",9,4,"wont",""]
+];
+
+const DONE_BY_DEFAULT = ["W-003","W-004","W-101","W-102","W-103","W-104","W-105","W-108",
+  "W-109","W-202","W-203","W-204","W-206","W-301","W-302","W-303","W-304","W-401","W-402"];
+
+const KEY="warden.board.v2";
+let done={}, filter="all";
+try{
+  const saved=localStorage.getItem(KEY);
+  done = saved ? JSON.parse(saved) : Object.fromEntries(DONE_BY_DEFAULT.map(id=>[id,true]));
+}catch(e){ done=Object.fromEntries(DONE_BY_DEFAULT.map(id=>[id,true])); }
+function save(){ try{ localStorage.setItem(KEY,JSON.stringify(done)); }catch(e){} }
+
+function render(){
+  const board=document.getElementById("board");
+  board.innerHTML="";
+  for(const sp of SPRINTS){
+    let rows=S.filter(s=>s[3]===sp.id);
+    if(filter==="must") rows=rows.filter(s=>s[5]==="must");
+    if(filter==="open") rows=rows.filter(s=>!done[s[0]]);
+    if(!rows.length) continue;
+
+    const all=S.filter(s=>s[3]===sp.id);
+    const tot=all.reduce((a,s)=>a+s[4],0);
+    const got=all.filter(s=>done[s[0]]).reduce((a,s)=>a+s[4],0);
+    const pct=tot?Math.round(got/tot*100):0;
+
+    const sec=document.createElement("section");
+    sec.className="sprint";
+    sec.innerHTML=`<div class="shead"><h2>${sp.name}</h2><span class="when">${sp.when} · ${got}/${tot}h · ${pct}%</span></div>
+      <p class="goal">${sp.goal}</p>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      ${sp.gate?`<div class="gate">${sp.gate}</div>`:""}
+      <ul class="stories"></ul>`;
+    const ul=sec.querySelector("ul");
+
+    for(const [id,title,epic,,est,pri,ac] of rows){
+      const li=document.createElement("li");
+      li.className="story"+(done[id]?" done":"");
+      li.innerHTML=`<input type="checkbox" ${done[id]?"checked":""} data-id="${id}">
+        <div class="meta">
+          <div class="l1"><span class="id">${id}</span><span class="t">${title}</span></div>
+          ${ac?`<div class="ac">${ac}</div>`:""}
+        </div>
+        <div class="tags">
+          <span class="tag epic">${epic}</span>
+          <span class="tag est">${est}h</span>
+          <span class="tag ${pri}">${pri.toUpperCase()}</span>
+        </div>`;
+      ul.appendChild(li);
+    }
+    board.appendChild(sec);
+  }
+
+  const musts=S.filter(s=>s[5]==="must");
+  const mTot=musts.reduce((a,s)=>a+s[4],0);
+  const mGot=musts.filter(s=>done[s[0]]).reduce((a,s)=>a+s[4],0);
+  const allGot=S.filter(s=>done[s[0]]).reduce((a,s)=>a+s[4],0);
+  const pct=Math.round(mGot/mTot*100);
+  const left=+(mTot-mGot).toFixed(2);
+
+  document.getElementById("k-done").textContent=allGot+"h";
+  document.getElementById("k-left").textContent=left+"h";
+  document.getElementById("k-pct").textContent=pct+"%";
+  document.getElementById("k-bar").style.width=pct+"%";
+
+  const d=Math.max(0,Math.ceil((Date.parse("2026-09-01T00:00:00Z")-Date.now())/864e5));
+  const kd=document.getElementById("k-days");
+  kd.textContent=d;
+  kd.parentElement.className="kpi"+(d<=3?" crit":d<=6?" warn":"");
+}
+
+document.getElementById("board").addEventListener("change",e=>{
+  if(e.target.matches("input[type=checkbox]")){
+    const id=e.target.dataset.id;
+    done[id]=e.target.checked; if(!done[id]) delete done[id];
+    save(); render();
+  }
+});
+function setF(f,btn){
+  filter=f;
+  ["f-all","f-must","f-open"].forEach(i=>document.getElementById(i).classList.remove("on"));
+  btn.classList.add("on"); render();
+}
+document.getElementById("f-all").onclick=e=>setF("all",e.target);
+document.getElementById("f-must").onclick=e=>setF("must",e.target);
+document.getElementById("f-open").onclick=e=>setF("open",e.target);
+document.getElementById("reset").onclick=()=>{ done=Object.fromEntries(DONE_BY_DEFAULT.map(id=>[id,true])); save(); render(); };
+
+render();
+</script>
+</body>
+</html>
