@@ -153,6 +153,7 @@
           <input id="target" value="examples/checkout-svc" spellcheck="false" placeholder="examples/checkout-svc  ·  or  https://github.com/you/your-repo" />
         </div>
         <label class="livetoggle"><input type="checkbox" id="live" onchange="onLiveToggle()" /> run live<br><span>real model</span></label>
+        <label class="livetoggle"><input type="checkbox" id="openpr" /> open PR<br><span>on your repo</span></label>
         <button class="run" id="runbtn" onclick="runDeliver()">▶ Run delivery</button>
       </div>
       <div class="runmeta" id="runmeta">Offline (default): analyses the bundled sample app — free, instant, no credentials. Tick <b>run live</b> to clone and analyse <b>your own repo</b> (a GitHub URL works) with the model in your <code>.env</code>.</div>
@@ -243,6 +244,7 @@ async function runDeliver(){
   const btn=document.getElementById("runbtn"), meta=document.getElementById("runmeta"), res=document.getElementById("results");
   const target=document.getElementById("target").value.trim()||"examples/checkout-svc";
   const live=document.getElementById("live").checked;
+  const openpr=document.getElementById("openpr").checked;
   btn.disabled=true; res.innerHTML=""; resetNodes();
   meta.innerHTML = live ? 'Cloning &amp; running live on your repo… (~20–40s)' : 'Running…';
   // cycle the active node continuously while the request is in flight
@@ -251,7 +253,7 @@ async function runDeliver(){
     step=(step+1)%DELIVER_NODES.length;
   },380);
   try{
-    const r=await fetch("/api/deliver/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target,live})});
+    const r=await fetch("/api/deliver/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target,live,pr:openpr})});
     const data = r.ok ? await r.json() : {error:"HTTP "+r.status};
     clearInterval(anim);
     if(data.error){
@@ -261,7 +263,12 @@ async function runDeliver(){
     }
     DELIVER_NODES.forEach(n=>{const e=document.getElementById("n-"+n);if(e){e.classList.remove("active");e.classList.add("done");}});
     const modeTag = data.live ? `<b style="color:var(--deliver)">live</b>` : `offline`;
-    meta.innerHTML=`<b style="color:var(--ok)">✓ ${esc(data.id)}</b> — ${modeTag} · ${data.nodes.length} nodes · ${data.totalTokens} tokens · target <b>${esc(data.target)}</b>`;
+    let prLine = "";
+    if(data.pr){
+      if(data.pr.pr_url) prLine = `<br>📬 <b style="color:var(--deliver)">Pull request opened:</b> <a href="${esc(data.pr.pr_url)}" target="_blank">${esc(data.pr.pr_url)}</a>`;
+      else if(data.pr.error) prLine = `<br><span style="color:var(--human)">PR: ${esc(data.pr.error)}</span>`;
+    }
+    meta.innerHTML=`<b style="color:var(--ok)">✓ ${esc(data.id)}</b> — ${modeTag} · ${data.nodes.length} nodes · ${data.totalTokens} tokens · target <b>${esc(data.target)}</b>${prLine}`;
     res.innerHTML=data.nodes.map((n,i)=>renderNode(n,i)).join("");
     const first=res.querySelector(".rcard"); if(first) first.classList.add("open");
   }catch(e){

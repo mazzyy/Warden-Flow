@@ -281,6 +281,69 @@ class GitHubClient:
         except Exception as exc:
             return self._failure("open_pull_request", exc)
 
+    async def open_delivery_pr(
+        self, *, title: str, body: str, changes: dict[str, str]
+    ) -> dict[str, Any]:
+        """Open a PR that ADDS DevOps files to a repo (create-or-update).
+
+        Unlike open_pull_request, which only edits files that already exist, a
+        delivery PR is mostly *new* files — a repo that has no Dockerfile yet —
+        so it creates a file when it is absent and updates it when it is present.
+        """
+        branch = self._branch_name(title)
+        footer = (
+            "Opened by **Warden Flow** — an AI DevOps engineer.\n\n"
+            "It generated these DevOps files from your code. Its only write "
+            "primitive is this pull request; a human reviews and merges."
+        )
+        signed_body = f"{body}\n\n---\n{footer}"
+
+        if self.dry_run:
+            self.dry_run_prs.append(
+                DryRunPR(title=title, body=signed_body, changes=changes, branch=branch)
+            )
+            return {
+                "dry_run": True,
+                "pr_url": f"https://github.com/{self._repo_name}/pull/DRY-RUN",
+                "branch": branch,
+                "files_changed": list(changes),
+                "title": title,
+            }
+
+        def _open():
+            repo = self._repo_handle()
+            base_sha = repo.get_branch(self._base).commit.sha
+            repo.create_git_ref(ref=f"refs/heads/{branch}", sha=base_sha)
+
+            created, updated = [], []
+            for path, content in changes.items():
+                try:
+                    existing = repo.get_contents(path, ref=branch)
+                    if existing.decoded_content.decode() == content:
+                        continue
+                    repo.update_file(path, f"chore(devops): update {path}", content,
+                                     existing.sha, branch=branch)
+                    updated.append(path)
+                except Exception:
+                    # Not found on the branch — create it.
+                    repo.create_file(path, f"chore(devops): add {path}", content, branch=branch)
+                    created.append(path)
+
+            if not created and not updated:
+                with contextlib.suppress(Exception):
+                    repo.get_git_ref(f"heads/{branch}").delete()
+                return {"error": "no_changes_needed",
+                        "detail": "the repo already contains exactly these files."}
+
+            pr = repo.create_pull(title=title, body=signed_body, head=branch, base=self._base)
+            return {"dry_run": False, "pr_url": pr.html_url, "pr_number": pr.number,
+                    "branch": branch, "files_created": created, "files_updated": updated}
+
+        try:
+            return await asyncio.to_thread(_open)
+        except Exception as exc:
+            return self._failure("open_delivery_pr", exc)
+
     async def open_revert(self, *, pr_number: int, reason: str) -> dict[str, Any]:
         if self.dry_run:
             log.info("DRY RUN: would revert PR #%s — %s", pr_number, reason)

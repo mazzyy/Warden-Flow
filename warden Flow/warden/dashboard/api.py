@@ -523,6 +523,7 @@ STUDIO = Path(__file__).parent / "studio.html"
 class DeliverBody(BaseModel):
     target: str = "examples/checkout-svc"
     live: bool = False
+    pr: bool = False
 
 
 @app.post("/api/deliver/run")
@@ -578,10 +579,29 @@ async def deliver_run(body: DeliverBody) -> dict:
     except Exception as exc:
         return {"error": f"{type(exc).__name__}: {exc}"[:400]}
 
+    pr_info = None
+    if body.live and body.pr and not result.stopped_at:
+        from warden.delivery.publish import open_delivery_pr
+        from warden.models import DeployPlan as _Dp
+        from warden.models import Dockerfile as _Df
+        from warden.models import Pipeline as _Pl
+
+        df = result.containerize.parse(_Df) if result.containerize else None
+        pl = result.pipeline.parse(_Pl) if result.pipeline else None
+        dp = result.deploy_plan.parse(_Dp) if result.deploy_plan else None
+        if df:
+            pr_info = await open_delivery_pr(
+                target=target,
+                dockerfile=df.content,
+                pipeline=pl.content if pl else "",
+                manifests=dp.manifests if dp else {},
+            )
+
     return {
         "id": result.id,
         "target": target,
         "live": body.live,
+        "pr": pr_info,
         "totalTokens": result.total_tokens,
         "stoppedAt": result.stopped_at,
         "nodes": [

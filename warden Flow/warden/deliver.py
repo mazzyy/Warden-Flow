@@ -43,7 +43,9 @@ def delivery_fleet() -> dict:
     return load_all(Path(settings().manifest_dir).parent / "delivery")
 
 
-async def main(live: bool, target: str, write: bool = False, apply_it: bool = False) -> int:
+async def main(
+    live: bool, target: str, write: bool = False, apply_it: bool = False, pr: bool = False
+) -> int:
     warnings.filterwarnings("ignore", category=UserWarning, module="google.*")
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
     load_env_file()  # bridge .env provider creds (AZURE_*, DELIVER_MODEL) into os.environ
@@ -145,6 +147,33 @@ async def main(live: bool, target: str, write: bool = False, apply_it: bool = Fa
     else:
         print(f"  {GREEN}Dockerfile generated and ready for human review.{RESET}")
 
+    # -- open a pull request on the target repo with the generated files -----
+    if pr and not result.stopped_at:
+        from warden.delivery.publish import open_delivery_pr
+
+        df = result.containerize.parse(Dockerfile) if result.containerize else None
+        pl = result.pipeline.parse(Pipeline) if result.pipeline else None
+        dp = result.deploy_plan.parse(DeployPlan) if result.deploy_plan else None
+        rule("PULL REQUEST")
+        if df is None:
+            print(f"  {YELLOW}nothing to propose — the workflow stopped early{RESET}")
+        else:
+            outcome = await open_delivery_pr(
+                target=target,
+                dockerfile=df.content,
+                pipeline=pl.content if pl else "",
+                manifests=dp.manifests if dp else {},
+            )
+            if outcome.get("error"):
+                print(f"  {RED}{outcome['error']}{RESET}")
+            elif outcome.get("dry_run"):
+                print(f"  {YELLOW}dry run — would open a PR on {outcome.get('repo')}{RESET}")
+            else:
+                print(f"  {GREEN}{outcome['pr_url']}{RESET}")
+                created = outcome.get("files_created", [])
+                if created:
+                    print(f"  {DIM}added: {', '.join(created)}{RESET}")
+
     # -- write artifacts into the repo, and (optionally) build/push/deploy ----
     if (write or apply_it) and not result.stopped_at:
         import os as _os
@@ -193,8 +222,13 @@ def _entry(default_target: str) -> None:
                    help="write the generated Dockerfile / pipeline / manifests into the repo")
     p.add_argument("--apply", action="store_true",
                    help="write, then build, push to ACR and deploy (needs ACR_* creds in env)")
+    p.add_argument("--pr", action="store_true",
+                   help="open a pull request on the target GitHub repo with the generated files "
+                        "(needs GITHUB_TOKEN with write access)")
     args = p.parse_args()
-    raise SystemExit(asyncio.run(main(args.live, args.target, write=args.write, apply_it=args.apply)))
+    raise SystemExit(
+        asyncio.run(main(args.live, args.target, write=args.write, apply_it=args.apply, pr=args.pr))
+    )
 
 
 def cli() -> None:

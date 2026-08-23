@@ -9,12 +9,19 @@ agent access" is a real credential, not just typing the URL.
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import tempfile
 
 
 def is_remote(target: str) -> bool:
     return target.startswith(("http://", "https://", "git@", "ssh://")) or target.endswith(".git")
+
+
+def parse_repo(target: str) -> str | None:
+    """Return 'owner/repo' from a github URL/target, or None if it is not one."""
+    m = re.search(r"github\.com[/:]([^/]+)/([^/.]+?)(?:\.git)?/?$", target)
+    return f"{m.group(1)}/{m.group(2)}" if m else None
 
 
 def resolve_source(target: str) -> str:
