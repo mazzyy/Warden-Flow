@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root{
+    --ink:#0f172a; --sub:#475569; --line:#cbd5e1; --bg:#f8fafc;
+    --llm:#2563eb; --llm-bg:#eff6ff; --human:#d97706; --human-bg:#fffbeb;
+    --gate:#7c3aed; --ok:#059669; --chip:#0f172a; --mono-bg:#ecfdf5; --mono:#047857;
+  }
+  body{ background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    width:1980px; padding:44px 40px 40px; }
+  .head{ display:flex; align-items:baseline; gap:16px; margin-bottom:6px; }
+  h1{ font-size:30px; font-weight:800; letter-spacing:-.02em; }
+  .tag{ font-size:14px; color:var(--sub); font-weight:600; }
+  .sub{ font-size:14.5px; color:var(--sub); margin-bottom:26px; max-width:1100px; line-height:1.5; }
+  .flow{ display:flex; align-items:stretch; gap:0; }
+  .col{ display:flex; flex-direction:column; align-items:center; }
+  .node{ width:270px; background:#fff; border:1px solid var(--line); border-radius:14px;
+    box-shadow:0 1px 2px rgba(15,23,42,.05); overflow:hidden; display:flex; flex-direction:column; min-height:330px; }
+  .node .top{ height:6px; }
+  .llm .top{ background:var(--llm); } .gate .top{ background:var(--gate); }
+  .human .top{ background:var(--human); } .verify .top{ background:var(--ok); }
+  .node .body{ padding:16px 16px 18px; display:flex; flex-direction:column; gap:11px; flex:1; }
+  .nrow{ display:flex; align-items:center; gap:8px; }
+  .num{ width:24px; height:24px; border-radius:7px; background:var(--ink); color:#fff;
+    font-size:13px; font-weight:700; display:flex; align-items:center; justify-content:center; }
+  .human .num{ background:var(--human); } .gate .num{ background:var(--gate); } .verify .num{ background:var(--ok); }
+  .name{ font-size:17px; font-weight:750; }
+  .kicker{ font-size:11px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--sub); }
+  .q{ font-size:13.5px; line-height:1.45; color:#1e293b; }
+  .chip{ display:inline-flex; align-items:center; gap:6px; font-size:12px; font-weight:650;
+    padding:4px 9px; border-radius:999px; }
+  .model{ background:var(--llm-bg); color:var(--llm); border:1px solid #bfdbfe; }
+  .human-chip{ background:var(--human-bg); color:var(--human); border:1px solid #fde68a; }
+  .budget{ font-size:11.5px; color:var(--sub); font-weight:600; }
+  .tools{ font-size:12px; color:var(--sub); line-height:1.5; }
+  .tools b{ color:#334155; font-weight:700; }
+  .out{ margin-top:auto; }
+  .out .lbl{ font-size:10.5px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--sub); margin-bottom:5px; }
+  .schema{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px;
+    background:var(--mono-bg); color:var(--mono); border:1px solid #a7f3d0; border-radius:8px; padding:7px 9px; line-height:1.5; }
+  .action{ font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:11.5px;
+    background:var(--human-bg); color:var(--human); border:1px solid #fde68a; border-radius:8px; padding:7px 9px; }
+  .arrow{ width:44px; display:flex; align-items:center; justify-content:center; color:#94a3b8; align-self:center; }
+  .arrow svg{ display:block; }
+  /* endpoints */
+  .ep{ width:120px; align-self:center; display:flex; flex-direction:column; gap:10px; align-items:center; }
+  .signal{ background:#fff; border:1px dashed var(--line); border-radius:10px; padding:9px 10px; font-size:12px;
+    color:var(--sub); font-weight:600; text-align:center; width:120px; }
+  .resolved{ background:#ecfdf5; border:1px solid #a7f3d0; color:var(--ok); font-weight:750; font-size:15px;
+    border-radius:12px; padding:16px 10px; text-align:center; width:120px; }
+  .close{ font-size:11.5px; color:var(--sub); text-align:center; margin-top:9px; font-weight:600; }
+  .legend{ margin-top:30px; display:flex; gap:26px; align-items:center; flex-wrap:wrap; font-size:12.5px; color:var(--sub); }
+  .legdot{ display:inline-flex; align-items:center; gap:7px; font-weight:600; }
+  .sw{ width:13px; height:13px; border-radius:4px; display:inline-block; }
+  .revert{ margin-top:14px; font-size:12.5px; color:var(--human); font-weight:650; display:flex; align-items:center; gap:8px; }
+  .footer{ margin-top:8px; font-size:12px; color:#94a3b8; }
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>Warden Flow</h1>
+    <span class="tag">ML Prompt-Engineering Workflow · autonomous incident remediation</span>
+  </div>
+  <div class="sub">A production alert becomes a reviewed one-line fix through five specialized nodes. Each LLM node runs one narrowly-scoped query, returns a <b>typed object</b> (not prose), and hands that structure to the next node. The only step that changes production is a human merge.</div>
+
+  <div class="flow">
+    <!-- signals -->
+    <div class="ep">
+      <div class="signal">Cloud Monitoring alert</div>
+      <div class="signal">Scheduler (cron)</div>
+      <div class="signal">GitHub webhook</div>
+    </div>
+
+    <div class="arrow"><svg width="30" height="18"><path d="M0 9 H24" stroke="#94a3b8" stroke-width="2" fill="none"/><path d="M22 4 L28 9 L22 14" stroke="#94a3b8" stroke-width="2" fill="none"/></svg></div>
+
+    <!-- 1 Triage -->
+    <div class="col">
+      <div class="node gate">
+        <div class="top"></div>
+        <div class="body">
+          <div class="nrow"><span class="num">1</span><span class="name">Triage</span></div>
+          <div class="kicker">Gate</div>
+          <div class="q">Is this real, a duplicate, and worth escalating? Most alerts die here.</div>
+          <div class="nrow"><span class="chip model">◆ gemini-3.5-flash</span></div>
+          <div class="budget">budget 20k tokens · 6 tool calls (cheapest tier)</div>
+          <div class="tools"><b>reads:</b> get_alert_context, recall_similar_incidents</div>
+          <div class="out">
+            <div class="lbl">Structured output</div>
+            <div class="schema">TriageVerdict {<br>&nbsp;&nbsp;severity, escalate: bool,<br>&nbsp;&nbsp;duplicate_of, reasoning }</div>
+          </div>
+        </div>
+      </div>
+      <div class="close">↓ noise / duplicate → close</div>
+    </div>
+
+    <div class="arrow"><svg width="30" height="18"><path d="M0 9 H24" stroke="#94a3b8" stroke-width="2" fill="none"/><path d="M22 4 L28 9 L22 14" stroke="#94a3b8" stroke-width="2" fill="none"/></svg></div>
+
+    <!-- 2 Diagnosis -->
+    <div class="col">
+      <div class="node llm">
+        <div class="top"></div>
+        <div class="body">
+          <div class="nrow"><span class="num">2</span><span class="name">Diagnosis</span></div>
+          <div class="kicker">Read-only reasoning</div>
+          <div class="q">What is the ONE root cause, and what evidence proves it? Cite tool output, never paraphrase.</div>
+          <div class="nrow"><span class="chip model">◆ gemini-3.5-flash</span></div>
+          <div class="budget">budget 120k tokens · 25 tool calls (reasoning tier)</div>
+          <div class="tools"><b>reads:</b> describe_workload, get_workload_logs, recent_deploys, query_metrics</div>
+          <div class="out">
+            <div class="lbl">Structured output</div>
+            <div class="schema">Diagnosis {<br>&nbsp;&nbsp;hypothesis, root_cause,<br>&nbsp;&nbsp;evidence[], suggested_fix,<br>&nbsp;&nbsp;confidence: 0–1 }</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow"><svg width="30" height="18"><path d="M0 9 H24" stroke="#94a3b8" stroke-width="2" fill="none"/><path d="M22 4 L28 9 L22 14" stroke="#94a3b8" stroke-width="2" fill="none"/></svg></div>
+
+    <!-- 3 Remediation -->
+    <div class="col">
+      <div class="node llm">
+        <div class="top"></div>
+        <div class="body">
+          <div class="nrow"><span class="num">3</span><span class="name">Remediation</span></div>
+          <div class="kicker">Generate patch</div>
+          <div class="q">Smallest change that fixes exactly that root cause. Blast radius ≤ 12 lines. Cannot reach the cluster; cannot merge.</div>
+          <div class="nrow"><span class="chip model">◆ gemini-3.5-flash</span></div>
+          <div class="budget">budget 120k tokens · 20 tool calls</div>
+          <div class="tools"><b>writes PR only:</b> list_repo_files, read_repo_file, propose_patch</div>
+          <div class="out">
+            <div class="lbl">Action</div>
+            <div class="action">→ opens Pull Request<br>ProposedPatch { pr_url,<br>&nbsp;&nbsp;files_changed, rationale }</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow"><svg width="30" height="18"><path d="M0 9 H24" stroke="#94a3b8" stroke-width="2" fill="none"/><path d="M22 4 L28 9 L22 14" stroke="#94a3b8" stroke-width="2" fill="none"/></svg></div>
+
+    <!-- 4 Human -->
+    <div class="col">
+      <div class="node human">
+        <div class="top"></div>
+        <div class="body">
+          <div class="nrow"><span class="num">★</span><span class="name">Human Review</span></div>
+          <div class="kicker">Human-in-the-loop · required</div>
+          <div class="q">A person reviews the one-line PR and merges or rejects. The workflow is <b>halted here</b> (approval: required) until they act.</div>
+          <div class="nrow"><span class="chip human-chip">● Human input — no LLM</span></div>
+          <div class="budget">the only step that changes production</div>
+          <div class="tools">Reviews cited evidence, minimal diff, and a 30-second PR body produced by node 3.</div>
+          <div class="out">
+            <div class="lbl">Action</div>
+            <div class="action">merge → apply &amp; sync<br>reject → close incident</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="arrow"><svg width="30" height="18"><path d="M0 9 H24" stroke="#94a3b8" stroke-width="2" fill="none"/><path d="M22 4 L28 9 L22 14" stroke="#94a3b8" stroke-width="2" fill="none"/></svg></div>
+
+    <!-- 5 Verify -->
+    <div class="col">
+      <div class="node verify">
+        <div class="top"></div>
+        <div class="body">
+          <div class="nrow"><span class="num">5</span><span class="name">Verification</span></div>
+          <div class="kicker">Confirm or revert</div>
+          <div class="q">Did the merged fix actually restore health? Healthy for a different reason ≠ fixed.</div>
+          <div class="nrow"><span class="chip model">◆ gemini-3.5-flash</span></div>
+          <div class="budget">budget 40k tokens · 15 tool calls</div>
+          <div class="tools"><b>reads + can propose revert:</b> get_workload_status, query_metrics, request_revert</div>
+          <div class="out">
+            <div class="lbl">Action</div>
+            <div class="action">recovered → close<br>not recovered → revert PR</div>
+          </div>
+        </div>
+      </div>
+      <div class="revert">↺ revert PR loops back to Human Review</div>
+    </div>
+
+    <div class="arrow"><svg width="30" height="18"><path d="M0 9 H24" stroke="#94a3b8" stroke-width="2" fill="none"/><path d="M22 4 L28 9 L22 14" stroke="#94a3b8" stroke-width="2" fill="none"/></svg></div>
+
+    <div class="ep">
+      <div class="resolved">✓ Incident<br>resolved</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="legdot"><span class="sw" style="background:#7c3aed"></span>Gate node</span>
+    <span class="legdot"><span class="sw" style="background:#2563eb"></span>LLM reasoning / generation node</span>
+    <span class="legdot"><span class="sw" style="background:#d97706"></span>Human input (required)</span>
+    <span class="legdot"><span class="sw" style="background:#059669"></span>Verification node</span>
+    <span class="legdot"><span class="sw" style="background:#047857"></span>◆ = model selection · typed output enforced per node</span>
+  </div>
+  <div class="footer">Every node is declared in a version-controlled manifest — model, tools, budget, and blast radius are configuration, not code. Node prompts and rationale: docs/reverie/node-documentation.md</div>
+</body>
+</html>

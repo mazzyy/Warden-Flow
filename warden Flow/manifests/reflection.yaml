@@ -1,0 +1,24 @@
+apiVersion: warden.dev/v1
+kind: Agent
+metadata:
+  name: reflection
+  description: >-
+    Post-incident prompt critic. Reads a completed run plus its benchmark score
+    and proposes the single highest-leverage change to a node's prompt. Holds no
+    tools and no write scope — its only product is advice. This is the
+    prompt-optimization feedback loop.
+spec:
+  model: gemini-3.5-flash
+  tools: []
+  scopes: []
+  blastRadius:
+    namespace: demo
+    maxFilesPerPatch: 0
+    maxChangedLines: 0
+  budget:
+    maxTokensPerRun: 40000
+    maxToolCalls: 0
+  approval: auto
+  circuitBreaker:
+    failuresBeforeOpen: 3
+    cooldownSeconds: 600

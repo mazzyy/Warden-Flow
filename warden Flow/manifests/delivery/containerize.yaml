@@ -1,0 +1,25 @@
+apiVersion: warden.dev/v1
+kind: Agent
+metadata:
+  name: containerize
+  description: >-
+    Generates a production Dockerfile from a RepoProfile — pinned base,
+    multi-stage, non-root, no baked secrets. Reads the repo; proposes a file. It
+    does not build or push anything.
+spec:
+  model: gemini-3.5-flash
+  tools:
+    - read_source_file
+  scopes:
+    - source:local:read
+  blastRadius:
+    namespace: demo
+    maxFilesPerPatch: 1
+    maxChangedLines: 200
+  budget:
+    maxTokensPerRun: 80000
+    maxToolCalls: 10
+  approval: required
+  circuitBreaker:
+    failuresBeforeOpen: 3
+    cooldownSeconds: 600

@@ -1,0 +1,26 @@
+apiVersion: warden.dev/v1
+kind: Agent
+metadata:
+  name: assess
+  description: >-
+    Read-only repository assessor. Reads the layout, dependency manifest and
+    entrypoint and reports a RepoProfile. Generates nothing; holds no write
+    scope. First node of the DELIVER workflow.
+spec:
+  model: gemini-3.5-flash
+  tools:
+    - list_source_files
+    - read_source_file
+  scopes:
+    - source:local:read
+  blastRadius:
+    namespace: demo
+    maxFilesPerPatch: 0
+    maxChangedLines: 0
+  budget:
+    maxTokensPerRun: 60000
+    maxToolCalls: 15
+  approval: auto
+  circuitBreaker:
+    failuresBeforeOpen: 3
+    cooldownSeconds: 600
