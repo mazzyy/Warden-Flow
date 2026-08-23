@@ -164,10 +164,10 @@ PIPELINE_SCRIPT = [
 DEPLOY_PLAN_SCRIPT = [
     {
         "json": {
-            "manifests": {
-                "k8s/deployment.yaml": DEPLOY_DEPLOYMENT,
-                "k8s/service.yaml": DEPLOY_SERVICE,
-            },
+            "manifests": [
+                {"path": "k8s/deployment.yaml", "content": DEPLOY_DEPLOYMENT},
+                {"path": "k8s/service.yaml", "content": DEPLOY_SERVICE},
+            ],
             "strategy": "RollingUpdate, maxSurge=1, maxUnavailable=0",
             "rollback": "kubectl rollout undo deployment/checkout-svc restores the previous ReplicaSet.",
             "rationale": "Three replicas with a surge-one rolling update keep the service available during deploys; requests/limits, probes, a non-root read-only securityContext and a digest-pinned image are all set.",

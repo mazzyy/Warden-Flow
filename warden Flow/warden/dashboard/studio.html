@@ -221,7 +221,7 @@ function renderNode(node, idx){
     body += `<div class="kv">stages <b>${(o.stages||[]).join(" → ")}</b></div><pre>${esc(o.content)}</pre>`;
   } else if(node.name==="deploy_plan"){
     body += `<div class="kv">strategy <b>${esc(o.strategy)}</b></div><div class="kv">rollback: ${esc(o.rollback)}</div>`;
-    for(const [p,y] of Object.entries(o.manifests||{})) body += `<div class="kv"><b>${esc(p)}</b></div><pre>${esc(y)}</pre>`;
+    for(const m of (o.manifests||[])) body += `<div class="kv"><b>${esc(m.path)}</b></div><pre>${esc(m.content)}</pre>`;
   } else if(node.name==="verify_artifacts"){
     const cls = o.passed ? "pass":"fail";
     body += `<div class="verdict ${cls}">${o.passed?"✓ PASSED":"✗ FAILED"}</div>`;
@@ -266,7 +266,7 @@ async function runDeliver(){
     let prLine = "";
     if(data.pr){
       if(data.pr.pr_url) prLine = `<br>📬 <b style="color:var(--deliver)">Pull request opened:</b> <a href="${esc(data.pr.pr_url)}" target="_blank">${esc(data.pr.pr_url)}</a>`;
-      else if(data.pr.error) prLine = `<br><span style="color:var(--human)">PR: ${esc(data.pr.error)}</span>`;
+      else if(data.pr.error) prLine = `<br><span style="color:var(--human)">PR: ${esc(data.pr.detail || data.pr.error)}</span>`;
     }
     meta.innerHTML=`<b style="color:var(--ok)">✓ ${esc(data.id)}</b> — ${modeTag} · ${data.nodes.length} nodes · ${data.totalTokens} tokens · target <b>${esc(data.target)}</b>${prLine}`;
     res.innerHTML=data.nodes.map((n,i)=>renderNode(n,i)).join("");

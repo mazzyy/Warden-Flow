@@ -139,7 +139,9 @@ async def deliver(
     deploy_plan = result.deploy_plan.parse(DeployPlan)
 
     # -- 5. Verify (handoff: everything generated) — the gate before review
-    manifests_text = "\n".join(f"# {p}\n{y}" for p, y in (deploy_plan.manifests if deploy_plan else {}).items())
+    manifests_text = "\n".join(
+        f"# {m.path}\n{m.content}" for m in (deploy_plan.manifests if deploy_plan else [])
+    )
     result.verify = await node(
         "verify_artifacts",
         "Validate the generated delivery artifacts. Report pass/issues.\n\n"

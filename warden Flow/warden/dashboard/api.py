@@ -594,7 +594,7 @@ async def deliver_run(body: DeliverBody) -> dict:
                 target=target,
                 dockerfile=df.content,
                 pipeline=pl.content if pl else "",
-                manifests=dp.manifests if dp else {},
+                manifests=dp.as_dict() if dp else {},
             )
 
     return {

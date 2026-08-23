@@ -312,7 +312,10 @@ class GitHubClient:
 
         def _open():
             repo = self._repo_handle()
-            base_sha = repo.get_branch(self._base).commit.sha
+            # Detect the repo's real default branch (main, master, …) instead of
+            # assuming "main" — a delivery PR targets whatever the repo actually uses.
+            base = repo.default_branch or self._base
+            base_sha = repo.get_branch(base).commit.sha
             repo.create_git_ref(ref=f"refs/heads/{branch}", sha=base_sha)
 
             created, updated = [], []
@@ -335,9 +338,10 @@ class GitHubClient:
                 return {"error": "no_changes_needed",
                         "detail": "the repo already contains exactly these files."}
 
-            pr = repo.create_pull(title=title, body=signed_body, head=branch, base=self._base)
+            pr = repo.create_pull(title=title, body=signed_body, head=branch, base=base)
             return {"dry_run": False, "pr_url": pr.html_url, "pr_number": pr.number,
-                    "branch": branch, "files_created": created, "files_updated": updated}
+                    "branch": branch, "base": base,
+                    "files_created": created, "files_updated": updated}
 
         try:
             return await asyncio.to_thread(_open)

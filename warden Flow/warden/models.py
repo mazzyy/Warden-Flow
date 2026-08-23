@@ -353,15 +353,28 @@ class Pipeline(BaseModel):
     rationale: str = Field(description="Why the pipeline is structured this way")
 
 
+class DeployManifest(BaseModel):
+    """One generated manifest file. A typed {path, content} pair rather than an
+    open-ended dict, because Azure OpenAI's strict structured-output mode rejects
+    objects with arbitrary keys."""
+
+    path: str = Field(description="Repo-relative path, e.g. k8s/deployment.yaml")
+    content: str = Field(description="The full manifest YAML")
+
+
 class DeployPlan(BaseModel):
     """The Deploy-Plan node's output — manifests and a rollout strategy."""
 
-    manifests: dict[str, str] = Field(
-        default_factory=dict, description="path -> manifest YAML"
+    manifests: list[DeployManifest] = Field(
+        default_factory=list, description="The manifests to write, each a path and its YAML"
     )
     strategy: str = Field(description="Rollout strategy, e.g. RollingUpdate maxSurge=1")
     rollback: str = Field(description="How a bad rollout is reversed")
     rationale: str = Field(description="Why this deployment shape")
+
+    def as_dict(self) -> dict[str, str]:
+        """path -> content, for the tools that write files."""
+        return {m.path: m.content for m in self.manifests}
 
 
 class VerifyReport(BaseModel):

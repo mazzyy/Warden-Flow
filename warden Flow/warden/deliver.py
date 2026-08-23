@@ -124,7 +124,7 @@ async def main(
         elif r.agent == "deploy_plan":
             dp = agent_run.parse(DeployPlan)
             if dp:
-                print(f"  {BLUE}manifests{RESET}  {', '.join(dp.manifests) or '(none)'}")
+                print(f"  {BLUE}manifests{RESET}  {', '.join(m.path for m in dp.manifests) or '(none)'}")
                 print(f"  {BLUE}strategy{RESET}   {dp.strategy}")
                 print(f"  {BLUE}rollback{RESET}   {dp.rollback}")
         elif r.agent == "verify_artifacts":
@@ -162,10 +162,10 @@ async def main(
                 target=target,
                 dockerfile=df.content,
                 pipeline=pl.content if pl else "",
-                manifests=dp.manifests if dp else {},
+                manifests=dp.as_dict() if dp else {},
             )
             if outcome.get("error"):
-                print(f"  {RED}{outcome['error']}{RESET}")
+                print(f"  {RED}{outcome.get('detail') or outcome['error']}{RESET}")
             elif outcome.get("dry_run"):
                 print(f"  {YELLOW}dry run — would open a PR on {outcome.get('repo')}{RESET}")
             else:
@@ -185,7 +185,7 @@ async def main(
         dp = result.deploy_plan.parse(DeployPlan) if result.deploy_plan else None
         if df:
             written = write_artifacts(
-                source_dir, df.content, pl.content if pl else "", dp.manifests if dp else {}
+                source_dir, df.content, pl.content if pl else "", dp.as_dict() if dp else {}
             )
             rule("ARTIFACTS WRITTEN")
             for w in written:
