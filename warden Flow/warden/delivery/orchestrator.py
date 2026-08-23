@@ -152,3 +152,141 @@ async def deliver(
 
     log.info("delivery %s complete — artifacts ready for human review", delivery_id)
     return result
+
+
+# --------------------------------------------------------------------------
+# Streaming variant — yields an event per stage so the UI can show the work as
+# it happens (cloning, then each node active, then its real output).
+# --------------------------------------------------------------------------
+
+_NODE_ORDER = [
+    ("assess", RepoProfile, "Reading your repo — language, entrypoint, ports."),
+    ("containerize", Dockerfile, "Writing a production Dockerfile."),
+    ("pipeline", Pipeline, "Writing the CI/CD pipeline."),
+    ("deploy_plan", DeployPlan, "Writing the Kubernetes manifests and rollout."),
+    ("verify_artifacts", None, "Validating every artifact before review."),
+]
+
+
+async def deliver_events(
+    *, target, fleet, store, github, estate, models=None, do_pr=False
+):
+    """Async generator yielding {stage, status, ...} events through the workflow."""
+    import asyncio
+    import os
+
+    from warden.delivery.source import is_remote, resolve_source
+
+    models = models or {}
+    override = deliver_model_override() if not models else None
+
+    def pick(name):
+        return models.get(name) if models else override
+
+    delivery_id = f"DEL-{uuid.uuid4().hex[:8].upper()}"
+
+    # -- clone / locate the source ----------------------------------------
+    yield {"stage": "clone", "status": "start", "target": target,
+           "remote": is_remote(target)}
+    try:
+        source_dir = await asyncio.to_thread(resolve_source, target)
+    except Exception as exc:
+        yield {"stage": "clone", "status": "error", "error": str(exc)[:200]}
+        return
+    files = []
+    for root, _dirs, fnames in os.walk(source_dir):
+        if any(p in root for p in (".git", "node_modules", ".venv")):
+            continue
+        for f in fnames:
+            files.append(os.path.relpath(os.path.join(root, f), source_dir))
+        if len(files) > 40:
+            break
+    yield {"stage": "clone", "status": "done", "fileCount": len(files),
+           "files": sorted(files)[:16]}
+
+    toolbox = ToolBox(estate=estate, store=store, github=github, source_root=source_dir)
+    toolbox.bind_incident(delivery_id)
+
+    prompts = {
+        "assess": (
+            f"Assess the service at '{target}' so it can be containerized and deployed. "
+            "Read the dependency manifest and entrypoint before answering."
+        ),
+    }
+    parsed = {}
+    total_tokens = 0
+
+    async def run_one(name, prompt):
+        return await run_agent(manifest=fleet[name], toolbox=toolbox, store=store,
+                               incident_id=delivery_id, prompt=prompt, model_override=pick(name))
+
+    for name, schema, thinking in _NODE_ORDER:
+        # Build the prompt with the handoff from earlier nodes.
+        if name == "assess":
+            prompt = prompts["assess"]
+        else:
+            profile = parsed.get("assess")
+            pblock = ""
+            if profile:
+                pblock = (
+                    f"Language: {profile.language}\nFramework: {profile.framework}\n"
+                    f"Entrypoint: {profile.entrypoint}\nPorts: {profile.ports}\n"
+                    f"Build system: {profile.build_system}\n"
+                    f"Dependencies: {', '.join(profile.dependencies) or 'stdlib only'}\n"
+                    f"Notes: {profile.notes}"
+                )
+            if name == "containerize":
+                prompt = ("Write a production Dockerfile for this service.\n" + pblock
+                          + "\n\nEnforce: pinned base, multi-stage, non-root, no baked secrets.")
+            elif name == "pipeline":
+                df = parsed.get("containerize")
+                prompt = ("Write a CI/CD pipeline for this containerized service.\n" + pblock
+                          + f"\nBase image: {df.base_image if df else 'the generated image'}\n\n"
+                          "Stages: build, test, scan, push (main only), deploy. Reference secrets, "
+                          "do not hardcode; least-privilege permissions.")
+            elif name == "deploy_plan":
+                prompt = ("Write the Kubernetes manifests and rollout plan for this service.\n"
+                          + pblock + "\nSet resource requests/limits, liveness/readiness probes, a "
+                          "non-root securityContext and an immutable image tag. State the rollback "
+                          "in one line.")
+            else:  # verify_artifacts
+                df = parsed.get("containerize")
+                pl = parsed.get("pipeline")
+                dp = parsed.get("deploy_plan")
+                mtext = "\n".join(f"# {m.path}\n{m.content}" for m in (dp.manifests if dp else []))
+                prompt = ("Validate the generated delivery artifacts. Report pass/issues.\n\n"
+                          f"--- Dockerfile ---\n{df.content if df else '(none)'}\n\n"
+                          f"--- Pipeline ---\n{pl.content if pl else '(none)'}\n\n"
+                          f"--- Manifests ---\n{mtext or '(none)'}")
+
+        yield {"stage": name, "status": "start", "thinking": thinking}
+        try:
+            run = await run_one(name, prompt)
+        except Exception as exc:
+            yield {"stage": name, "status": "error", "error": str(exc)[:300]}
+            return
+        if schema is not None:
+            obj = run.parse(schema)
+            if obj is not None:
+                parsed[name] = obj
+        total_tokens += run.run.total_tokens
+        yield {"stage": name, "status": "done", "model": run.run.model,
+               "tokens": run.run.total_tokens, "output": run.structured or {}}
+
+    # -- pull request ------------------------------------------------------
+    pr_info = None
+    if do_pr:
+        yield {"stage": "pr", "status": "start", "thinking": "Opening a pull request on your repo."}
+        from warden.delivery.publish import open_delivery_pr
+
+        df, pl, dp = parsed.get("containerize"), parsed.get("pipeline"), parsed.get("deploy_plan")
+        if df:
+            pr_info = await open_delivery_pr(
+                target=target, dockerfile=df.content,
+                pipeline=pl.content if pl else "",
+                manifests=dp.as_dict() if dp else {},
+            )
+        yield {"stage": "pr", "status": "done", "pr": pr_info}
+
+    yield {"stage": "complete", "status": "done", "id": delivery_id,
+           "totalTokens": total_tokens, "pr": pr_info}

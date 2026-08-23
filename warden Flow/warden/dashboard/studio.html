@@ -7,281 +7,306 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   :root{
-    --bg:#0b0f17;--panel:#111826;--panel2:#0e1521;--line:#1e293b;--line2:#243043;
-    --ink:#e6edf6;--sub:#8b97a8;--dim:#5b6675;
-    --deliver:#2dd4bf;--operate:#818cf8;--human:#f59e0b;--ok:#34d399;--bad:#f87171;
+    --bg:#0a0e16;--panel:#111826;--panel2:#0d141f;--line:#1d2634;--line2:#26313f;
+    --ink:#e8eef7;--sub:#93a1b3;--dim:#5a6676;
+    --teal:#2dd4bf;--indigo:#818cf8;--amber:#f59e0b;--ok:#34d399;--bad:#f87171;
     --mono:'SFMono-Regular',ui-monospace,Menlo,Consolas,monospace;
   }
-  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    line-height:1.5;-webkit-font-smoothing:antialiased}
-  a{color:var(--deliver);text-decoration:none} a:hover{text-decoration:underline}
-  .wrap{max-width:1280px;margin:0 auto;padding:28px 28px 60px}
-  header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:6px;flex-wrap:wrap}
-  .brand{display:flex;align-items:baseline;gap:12px}
-  h1{font-size:24px;font-weight:800;letter-spacing:-.02em}
-  .brand .t{font-size:13px;color:var(--sub);font-weight:600}
-  .navlinks{display:flex;gap:10px;align-items:center;font-size:13px}
-  .navlinks a{padding:6px 12px;border:1px solid var(--line2);border-radius:8px;color:var(--ink)}
-  .lead{color:var(--sub);font-size:14.5px;max-width:900px;margin:10px 0 22px}
+  body{background:radial-gradient(1200px 600px at 70% -10%,#0f1a2b 0,var(--bg) 55%);
+    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+  a{color:var(--teal);text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:1180px;margin:0 auto;padding:26px 24px 70px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:11px}
+  h1{font-size:23px;font-weight:800;letter-spacing:-.02em}
+  .brand .t{font-size:12.5px;color:var(--sub);font-weight:600}
+  .nav a{font-size:13px;padding:6px 12px;border:1px solid var(--line2);border-radius:8px;color:var(--ink)}
+  .lead{color:var(--sub);font-size:14px;max-width:820px;margin:9px 0 4px}
   .lead b{color:var(--ink)}
-  .models{font-size:12.5px;color:var(--dim);margin-bottom:26px}
+  .models{font-size:12px;color:var(--dim);margin-bottom:20px}
   .models b{color:var(--sub)}
-  section{margin-bottom:30px}
-  .h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);font-weight:700;margin-bottom:14px}
 
-  /* lifecycle lanes */
-  .lane{display:flex;align-items:stretch;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:6px}
-  .lanetag{width:96px;flex:none;display:flex;flex-direction:column;justify-content:center;gap:2px}
-  .lanetag .nm{font-weight:800;font-size:14px;letter-spacing:.02em}
-  .lanetag .kd{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);font-weight:700}
-  .deliver .nm{color:var(--deliver)} .operate .nm{color:var(--operate)}
-  .node{min-width:150px;flex:1;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 12px;
-    display:flex;flex-direction:column;gap:6px;transition:.25s;position:relative}
-  .node .top{position:absolute;left:0;right:0;top:0;height:3px;border-radius:11px 11px 0 0;opacity:.5}
-  .deliver .node .top{background:var(--deliver)} .operate .node .top{background:var(--operate)}
-  .node.human .top{background:var(--human);opacity:.9}
-  .node .nm{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px}
-  .node .q{font-size:11.5px;color:var(--sub);line-height:1.35}
-  .node .out{font-family:var(--mono);font-size:10.5px;color:var(--deliver);opacity:.85;margin-top:auto}
-  .node.human .out{color:var(--human)}
-  .dot{width:7px;height:7px;border-radius:50%;background:var(--dim);flex:none}
-  .node.active{border-color:var(--deliver);box-shadow:0 0 0 1px var(--deliver),0 0 22px -6px var(--deliver)}
-  .node.active .dot{background:var(--deliver);animation:pulse 1s infinite}
-  .node.done .dot{background:var(--ok)} .node.done{border-color:var(--line2)}
-  .node.human .dot{background:var(--human)}
-  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
-  .arrow{align-self:center;color:var(--dim);font-size:14px;flex:none}
+  /* run bar */
+  .runpanel{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .runbar{display:flex;gap:11px;align-items:stretch;flex-wrap:wrap}
+  .field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:240px}
+  .field label{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .field input{background:#080d15;border:1px solid var(--line2);color:var(--ink);border-radius:9px;
+    padding:10px 12px;font-family:var(--mono);font-size:13px}
+  .field input:focus{outline:none;border-color:var(--teal)}
+  .toggle{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:12px;
+    color:var(--sub);font-weight:650;cursor:pointer;padding:6px 11px;border:1px solid var(--line2);border-radius:9px}
+  .toggle span{font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+  .toggle input{accent-color:var(--teal)}
+  button.run{background:linear-gradient(180deg,#34e0cc,#17b4a3);color:#04211d;border:none;border-radius:9px;
+    padding:0 22px;font-weight:800;font-size:14px;cursor:pointer;transition:.15s;white-space:nowrap}
+  button.run:hover{filter:brightness(1.07)} button.run:disabled{opacity:.5;cursor:not-allowed}
 
-  /* run panel */
-  .panel{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:20px}
-  .runbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-  .field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:260px}
-  .field label{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
-  .field input{background:#0a1019;border:1px solid var(--line2);color:var(--ink);border-radius:9px;padding:10px 12px;
-    font-family:var(--mono);font-size:13px}
-  .field input:focus{outline:none;border-color:var(--deliver)}
-  .livetoggle{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px;color:var(--sub);font-weight:650;
-    cursor:pointer;padding:4px 8px;border:1px solid var(--line2);border-radius:9px;white-space:nowrap}
-  .livetoggle span{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
-  .livetoggle input{margin-right:4px}
-  button.run{background:var(--deliver);color:#04211d;border:none;border-radius:9px;padding:11px 20px;font-weight:750;
-    font-size:14px;cursor:pointer;transition:.15s;white-space:nowrap}
-  button.run:hover{filter:brightness(1.08)} button.run:disabled{opacity:.5;cursor:not-allowed}
-  .runmeta{font-size:12px;color:var(--sub);margin-top:12px;font-family:var(--mono)}
+  /* thinking bar */
+  .think{display:none;align-items:center;gap:13px;margin-top:14px;padding:13px 15px;border-radius:11px;
+    background:linear-gradient(90deg,rgba(45,212,191,.10),rgba(129,140,248,.06));border:1px solid var(--line2)}
+  .think.on{display:flex}
+  .orb{width:26px;height:26px;border-radius:50%;flex:none;position:relative}
+  .orb::before,.orb::after{content:"";position:absolute;inset:0;border-radius:50%;
+    border:2px solid transparent;border-top-color:var(--teal);animation:spin .9s linear infinite}
+  .orb::after{inset:5px;border-top-color:var(--indigo);animation-duration:1.4s;animation-direction:reverse}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .think .txt{font-size:14px;font-weight:600}
+  .think .sub{font-size:12px;color:var(--sub)}
+  .think.done .orb{border:none;background:var(--ok);box-shadow:0 0 16px -2px var(--ok)} .think.done .orb::before,.think.done .orb::after{display:none}
+  .think.err .orb{border:none;background:var(--bad)} .think.err .orb::before,.think.err .orb::after{display:none}
 
-  /* results */
-  #results{display:flex;flex-direction:column;gap:10px;margin-top:16px}
-  .rcard{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}
-  .rhead{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none}
-  .rhead .n{width:22px;height:22px;border-radius:6px;background:var(--deliver);color:#04211d;font-weight:800;font-size:12px;
-    display:flex;align-items:center;justify-content:center;flex:none}
-  .rhead .title{font-weight:700;font-size:14px}
-  .rhead .model{font-family:var(--mono);font-size:11px;color:var(--dim);margin-left:auto}
-  .rhead .chev{color:var(--dim);transition:.2s}
-  .rcard.open .chev{transform:rotate(90deg)}
-  .rbody{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}
-  .rcard.open .rbody{display:block}
-  .kv{font-size:12.5px;color:var(--sub);margin:8px 0}
-  .kv b{color:var(--ink);font-weight:650}
+  /* pipeline rail */
+  .rail{display:flex;align-items:center;gap:0;margin:18px 0 6px;overflow-x:auto;padding-bottom:6px}
+  .stepwrap{display:flex;align-items:center;flex:none}
+  .step{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:82px;opacity:.55;transition:.3s}
+  .step .disc{width:34px;height:34px;border-radius:50%;border:2px solid var(--line2);display:flex;
+    align-items:center;justify-content:center;font-size:15px;background:var(--panel);transition:.3s}
+  .step .lb{font-size:11px;color:var(--sub);font-weight:650}
+  .step.active{opacity:1}
+  .step.active .disc{border-color:var(--teal);color:var(--teal);box-shadow:0 0 0 4px rgba(45,212,191,.14);
+    animation:breathe 1.1s ease-in-out infinite}
+  @keyframes breathe{50%{box-shadow:0 0 0 8px rgba(45,212,191,.05)}}
+  .step.done{opacity:1} .step.done .disc{border-color:var(--ok);background:rgba(52,211,153,.12);color:var(--ok)}
+  .step.err .disc{border-color:var(--bad);color:var(--bad)}
+  .conn{width:26px;height:2px;background:var(--line2);flex:none;transition:.3s}
+  .conn.done{background:var(--ok)}
+
+  /* stage cards */
+  #stages{display:flex;flex-direction:column;gap:12px;margin-top:16px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow:hidden}
+  .card .hd{display:flex;align-items:center;gap:10px;padding:12px 15px}
+  .card .hd .ic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+    font-size:14px;background:rgba(45,212,191,.12);color:var(--teal);flex:none}
+  .card .hd .nm{font-weight:750;font-size:14.5px}
+  .card .hd .meta{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--dim)}
+  .card .bd{padding:0 15px 15px}
+  .spinner{width:14px;height:14px;border:2px solid var(--line2);border-top-color:var(--teal);border-radius:50%;
+    display:inline-block;animation:spin .8s linear infinite;vertical-align:-2px}
+  .kv{font-size:13px;color:var(--sub);margin:4px 0} .kv b{color:var(--ink);font-weight:650}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:4px}
+  .stat{background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:9px 11px}
+  .stat .l{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+  .stat .v{font-size:14px;font-weight:700;font-family:var(--mono);margin-top:2px;word-break:break-word}
   .tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-  .tag{background:#0c2a24;color:var(--ok);border:1px solid #14532d;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:600}
-  pre{background:#0a1019;border:1px solid var(--line2);border-radius:9px;padding:12px;overflow-x:auto;
-    font-family:var(--mono);font-size:11.5px;color:#cbd5e1;margin-top:8px;line-height:1.5}
-  .verdict{display:inline-flex;align-items:center;gap:6px;font-weight:750;font-size:13px}
-  .verdict.pass{color:var(--ok)} .verdict.fail{color:var(--bad)}
+  .tag{background:rgba(52,211,153,.10);color:var(--ok);border:1px solid rgba(52,211,153,.25);
+    border-radius:999px;padding:3px 9px;font-size:11px;font-weight:600}
+  .badge{background:rgba(129,140,248,.12);color:var(--indigo);border:1px solid rgba(129,140,248,.3);
+    border-radius:6px;padding:2px 8px;font-size:11px;font-weight:650;font-family:var(--mono)}
+  .filechips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+  .fchip{background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:2px 8px;
+    font-family:var(--mono);font-size:11px;color:var(--sub)}
 
-  /* connect panel */
-  .steps{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-  @media(max-width:820px){.steps{grid-template-columns:1fr}}
-  .step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
-  .step h3{font-size:14px;font-weight:750;margin-bottom:6px;display:flex;align-items:center;gap:8px}
-  .step .num{width:22px;height:22px;border-radius:6px;background:var(--operate);color:#0b0f17;font-weight:800;font-size:12px;
-    display:flex;align-items:center;justify-content:center}
-  .step p{font-size:13px;color:var(--sub);margin-bottom:8px}
-  .foot{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
+  /* editor-style code block */
+  .editor{border:1px solid var(--line2);border-radius:10px;overflow:hidden;margin-top:9px;background:#070b12}
+  .editor .bar{display:flex;align-items:center;gap:7px;padding:8px 12px;background:#0c1320;border-bottom:1px solid var(--line2)}
+  .editor .bar .dot{width:10px;height:10px;border-radius:50%}
+  .editor .bar .fn{font-family:var(--mono);font-size:11.5px;color:var(--sub);margin-left:4px}
+  .editor .bar .lang{margin-left:auto;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
+  .editor pre{margin:0;padding:12px 14px;overflow-x:auto;font-family:var(--mono);font-size:11.5px;
+    line-height:1.65;color:#c9d4e3;counter-reset:ln}
+  .editor pre .ln{display:block;white-space:pre}
+  .editor pre .ln::before{counter-increment:ln;content:counter(ln);display:inline-block;width:26px;
+    margin-right:14px;color:#3a4658;text-align:right;user-select:none}
+  .verdict{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:15px;margin:2px 0 6px}
+  .verdict.pass{color:var(--ok)} .verdict.fail{color:var(--bad)}
+  .prbanner{margin-top:14px;padding:14px 16px;border-radius:12px;border:1px solid rgba(45,212,191,.3);
+    background:rgba(45,212,191,.08);font-size:14px}
+  .prbanner a{font-weight:700}
+  .warn{color:var(--amber);font-size:12.5px;margin-top:6px}
+
+  /* connect */
+  .h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);font-weight:700;margin:30px 0 12px}
+  .steps{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:800px){.steps{grid-template-columns:1fr}}
+  .cstep{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px}
+  .cstep h3{font-size:13.5px;font-weight:750;margin-bottom:5px;display:flex;align-items:center;gap:8px}
+  .cstep .num{width:20px;height:20px;border-radius:6px;background:var(--indigo);color:#0a0e16;font-weight:800;
+    font-size:11px;display:flex;align-items:center;justify-content:center}
+  .cstep p{font-size:12.5px;color:var(--sub);margin-bottom:7px}
+  .cstep pre{background:#070b12;border:1px solid var(--line2);border-radius:8px;padding:10px;
+    font-family:var(--mono);font-size:11px;color:#c9d4e3;overflow-x:auto}
+  .foot{margin-top:26px;color:var(--dim);font-size:12px;text-align:center}
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="brand"><h1>Warden Flow</h1><span class="t">DevOps Studio</span></div>
-    <div class="navlinks">
-      <a href="/incidents">Incident dashboard →</a>
-    </div>
+    <div class="nav"><a href="/incidents">Incident dashboard →</a></div>
   </header>
-  <div class="lead">An AI DevOps engineer as a multi-node LLM workflow. <b>DELIVER</b> ships a service — assess a repo, generate a Dockerfile, a CI/CD pipeline and a deploy plan; <b>OPERATE</b> keeps it healthy. Every node returns a <b>typed object</b> and hands it to the next; the only step that changes production is a human merge.</div>
-  <div class="models">Models swappable per node — <b>Google Gemini 3.5</b> · <b>Azure OpenAI GPT‑5.6</b> · OpenAI · Anthropic.</div>
+  <div class="lead">An AI DevOps engineer. Point it at a repo and watch it read your code, write a <b>Dockerfile</b>, a <b>CI/CD pipeline</b> and <b>deploy manifests</b>, then open a pull request — live, stage by stage.</div>
+  <div class="models">Running on <b>Azure OpenAI GPT‑5.6</b> when live · Gemini offline · every node returns a typed object.</div>
 
-  <!-- LIFECYCLE -->
-  <section>
-    <div class="h2">The lifecycle</div>
-    <div class="lane deliver">
-      <div class="lanetag"><span class="kd">proactive</span><span class="nm">DELIVER</span></div>
-      <div class="node" id="n-assess"><div class="top"></div><div class="nm"><span class="dot"></span>Assess</div><div class="q">Profile the repo</div><div class="out">RepoProfile</div></div>
-      <span class="arrow">→</span>
-      <div class="node" id="n-containerize"><div class="top"></div><div class="nm"><span class="dot"></span>Containerize</div><div class="q">Write a secure Dockerfile</div><div class="out">Dockerfile</div></div>
-      <span class="arrow">→</span>
-      <div class="node" id="n-pipeline"><div class="top"></div><div class="nm"><span class="dot"></span>Pipeline</div><div class="q">Write CI/CD</div><div class="out">Pipeline</div></div>
-      <span class="arrow">→</span>
-      <div class="node" id="n-deploy_plan"><div class="top"></div><div class="nm"><span class="dot"></span>Deploy&nbsp;Plan</div><div class="q">Manifests + rollout</div><div class="out">DeployPlan</div></div>
-      <span class="arrow">→</span>
-      <div class="node human"><div class="top"></div><div class="nm"><span class="dot"></span>Human&nbsp;Review</div><div class="q">Approve as a PR</div><div class="out">your call</div></div>
-      <span class="arrow">→</span>
-      <div class="node" id="n-verify_artifacts"><div class="top"></div><div class="nm"><span class="dot"></span>Verify</div><div class="q">Validate all of it</div><div class="out">VerifyReport</div></div>
+  <div class="runpanel">
+    <div class="runbar">
+      <div class="field">
+        <label>Project directory (on the server) or GitHub URL</label>
+        <input id="target" value="examples/checkout-svc" spellcheck="false" placeholder="https://github.com/you/your-repo" />
+      </div>
+      <label class="toggle"><input type="checkbox" id="live" /> run live<span>real model</span></label>
+      <label class="toggle"><input type="checkbox" id="openpr" /> open PR<span>on your repo</span></label>
+      <button class="run" id="runbtn" onclick="run()">▶ Run</button>
     </div>
-    <div class="lane operate">
-      <div class="lanetag"><span class="kd">reactive</span><span class="nm">OPERATE</span></div>
-      <div class="node"><div class="top"></div><div class="nm"><span class="dot"></span>Triage</div><div class="q">Real? escalate?</div><div class="out">TriageVerdict</div></div>
-      <span class="arrow">→</span>
-      <div class="node"><div class="top"></div><div class="nm"><span class="dot"></span>Diagnose</div><div class="q">Root cause + evidence</div><div class="out">Diagnosis</div></div>
-      <span class="arrow">→</span>
-      <div class="node"><div class="top"></div><div class="nm"><span class="dot"></span>Remediate</div><div class="q">Smallest fix → PR</div><div class="out">ProposedPatch</div></div>
-      <span class="arrow">→</span>
-      <div class="node human"><div class="top"></div><div class="nm"><span class="dot"></span>Human&nbsp;Review</div><div class="q">Merge or reject</div><div class="out">your call</div></div>
-      <span class="arrow">→</span>
-      <div class="node"><div class="top"></div><div class="nm"><span class="dot"></span>Verify</div><div class="q">Did it recover?</div><div class="out">verdict</div></div>
-    </div>
-  </section>
 
-  <!-- RUN -->
-  <section>
-    <div class="h2">Run the DELIVER workflow</div>
-    <div class="panel">
-      <div class="runbar">
-        <div class="field">
-          <label>Project directory (on the server) or GitHub URL</label>
-          <input id="target" value="examples/checkout-svc" spellcheck="false" placeholder="examples/checkout-svc  ·  or  https://github.com/you/your-repo" />
-        </div>
-        <label class="livetoggle"><input type="checkbox" id="live" onchange="onLiveToggle()" /> run live<br><span>real model</span></label>
-        <label class="livetoggle"><input type="checkbox" id="openpr" /> open PR<br><span>on your repo</span></label>
-        <button class="run" id="runbtn" onclick="runDeliver()">▶ Run delivery</button>
-      </div>
-      <div class="runmeta" id="runmeta">Offline (default): analyses the bundled sample app — free, instant, no credentials. Tick <b>run live</b> to clone and analyse <b>your own repo</b> (a GitHub URL works) with the model in your <code>.env</code>.</div>
-      <div id="results"></div>
+    <div class="think" id="think">
+      <div class="orb" id="orb"></div>
+      <div><div class="txt" id="thinkTxt">Starting…</div><div class="sub" id="thinkSub"></div></div>
     </div>
-  </section>
 
-  <!-- CONNECT -->
-  <section>
-    <div class="h2">Connect your project</div>
-    <div class="steps">
-      <div class="step">
-        <h3><span class="num">1</span>Point the agent at your repo</h3>
-        <p>The workflow reads a local directory. Use the box above, or the CLI with any folder:</p>
-        <pre>make deliver-live \
-  # or:
-./.venv/bin/python -m warden.deliver \
-      --target /path/to/your/repo --live</pre>
-        <p>Assess reads your dependency manifest and entrypoint; the rest of the workflow builds on that.</p>
-      </div>
-      <div class="step">
-        <h3><span class="num">2</span>Choose the model (optional)</h3>
-        <p>Default is Gemini. To run on your <b>Azure GPT‑5.6</b>, add to <code>.env</code>:</p>
-        <pre>DELIVER_MODEL=azure/gpt-5.6-sol
-AZURE_API_KEY=…
-AZURE_API_BASE=https://&lt;resource&gt;.openai.azure.com/
-AZURE_API_VERSION=2024-12-01-preview</pre>
-        <p>Every node then runs on that model — same governance and typed output.</p>
-      </div>
-      <div class="step">
-        <h3><span class="num">3</span>Review &amp; ship</h3>
-        <p>The workflow opens the generated Dockerfile, pipeline and manifests as a pull request. A human approves — that's the only step that changes production.</p>
-      </div>
-      <div class="step">
-        <h3><span class="num">4</span>Prove it beats a single prompt</h3>
-        <p>The benchmark scores the same job both ways, on the real Dockerfile:</p>
-        <pre>make bench-deliver
-# single prompt 0/5  ·  warden flow 5/5</pre>
-      </div>
-    </div>
-  </section>
+    <div class="rail" id="rail"></div>
+    <div id="stages"></div>
+  </div>
 
-  <div class="foot">Warden Flow · one structured-prompting engine, two workflows · nodes are version-controlled manifests</div>
+  <div class="h2">Connect your project</div>
+  <div class="steps">
+    <div class="cstep"><h3><span class="num">1</span>Point it at your repo</h3>
+      <p>Paste a GitHub URL above and tick <b>run live</b>, or from your project folder:</p>
+      <pre>warden-deliver --live</pre></div>
+    <div class="cstep"><h3><span class="num">2</span>Open a PR (token)</h3>
+      <p>Tick <b>open PR</b> + set <code>GITHUB_TOKEN</code> (Contents · Workflows · Pull requests: write) to push the DevOps back as a pull request.</p>
+      <pre>GITHUB_TOKEN=github_pat_…</pre></div>
+    <div class="cstep"><h3><span class="num">3</span>Model (optional)</h3>
+      <p>Default Gemini; for Azure GPT‑5.6 add to <code>.env</code>:</p>
+      <pre>DELIVER_MODEL=azure/gpt-5.6-sol</pre></div>
+    <div class="cstep"><h3><span class="num">4</span>Deploy</h3>
+      <p>Merge the PR → the generated pipeline builds, pushes to ACR and deploys, using your repo secrets.</p>
+      <pre>make bench-deliver   # single prompt 0/5 vs workflow 5/5</pre></div>
+  </div>
+  <div class="foot">Warden Flow · one structured-prompting engine · nodes are version-controlled manifests</div>
 </div>
 
 <script>
-const DELIVER_NODES = ["assess","containerize","pipeline","deploy_plan","verify_artifacts"];
-const TITLES = {assess:"Assess",containerize:"Containerize",pipeline:"Pipeline",deploy_plan:"Deploy Plan",verify_artifacts:"Verify"};
+const STEPS = [
+  {key:"clone",       label:"Clone",       icon:"⬇"},
+  {key:"assess",      label:"Assess",      icon:"🔍"},
+  {key:"containerize",label:"Containerize",icon:"📦"},
+  {key:"pipeline",    label:"Pipeline",    icon:"⚙"},
+  {key:"deploy_plan", label:"Deploy",      icon:"🚀"},
+  {key:"verify_artifacts",label:"Verify",  icon:"✓"},
+  {key:"pr",          label:"PR",          icon:"📬"},
+];
+const TITLE = {clone:"Clone",assess:"Assess",containerize:"Containerize",pipeline:"Pipeline",
+  deploy_plan:"Deploy Plan",verify_artifacts:"Verify",pr:"Pull request"};
+const esc = s => (s==null?"":String(s)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+const code = t => (esc(t).split("\n").map(l=>`<span class="ln">${l||" "}</span>`).join(""));
+const $ = id => document.getElementById(id);
 
-function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
-function resetNodes(){DELIVER_NODES.forEach(n=>{const e=document.getElementById("n-"+n);if(e){e.classList.remove("active","done");}});}
-function toggle(el){el.classList.toggle("open");}
+function buildRail(){
+  const r=$("rail"); r.innerHTML="";
+  STEPS.forEach((s,i)=>{
+    const w=document.createElement("div"); w.className="stepwrap";
+    w.innerHTML=`<div class="step" id="st-${s.key}"><div class="disc">${s.icon}</div><div class="lb">${s.label}</div></div>`
+      + (i<STEPS.length-1?`<div class="conn" id="cn-${s.key}"></div>`:"");
+    r.appendChild(w);
+  });
+}
+buildRail();
 
-function renderNode(node, idx){
-  const o = node.output || {};
-  let body = `<div class="kv">${node.tokens} tokens · <b>${esc(node.model)}</b></div>`;
-  if(node.name==="assess"){
-    body += `<div class="kv">language <b>${esc(o.language)}</b> · entrypoint <b>${esc(o.entrypoint)}</b> · ports <b>${JSON.stringify(o.ports||[])}</b> · build <b>${esc(o.build_system)}</b></div>`;
-    if(o.notes) body += `<div class="kv">${esc(o.notes)}</div>`;
-  } else if(node.name==="containerize"){
-    body += `<div class="kv">base <b>${esc(o.base_image)}</b> · multistage <b>${o.multistage}</b> · non-root <b>${o.runs_as_nonroot}</b></div>`;
-    body += `<div class="tags">${(o.security_notes||[]).map(s=>`<span class="tag">✓ ${esc(s)}</span>`).join("")}</div>`;
-    body += `<pre>${esc(o.content)}</pre>`;
-  } else if(node.name==="pipeline"){
-    body += `<div class="kv">stages <b>${(o.stages||[]).join(" → ")}</b></div><pre>${esc(o.content)}</pre>`;
-  } else if(node.name==="deploy_plan"){
-    body += `<div class="kv">strategy <b>${esc(o.strategy)}</b></div><div class="kv">rollback: ${esc(o.rollback)}</div>`;
-    for(const m of (o.manifests||[])) body += `<div class="kv"><b>${esc(m.path)}</b></div><pre>${esc(m.content)}</pre>`;
-  } else if(node.name==="verify_artifacts"){
-    const cls = o.passed ? "pass":"fail";
-    body += `<div class="verdict ${cls}">${o.passed?"✓ PASSED":"✗ FAILED"}</div>`;
-    body += `<div class="tags">${(o.checks||[]).map(c=>`<span class="tag">✓ ${esc(c)}</span>`).join("")}</div>`;
-    if((o.issues||[]).length) body += (o.issues).map(i=>`<div class="kv" style="color:var(--bad)">✗ ${esc(i)}</div>`).join("");
+let usePR=false;
+function setStep(key,state){ const e=$("st-"+key); if(e){ e.classList.remove("active","done","err"); if(state) e.classList.add(state);}
+  const c=$("cn-"+key); if(c && state==="done") c.classList.add("done"); }
+function think(txt,sub,mode){ const t=$("think"); t.className="think on"+(mode?(" "+mode):""); $("thinkTxt").textContent=txt; $("thinkSub").innerHTML=sub||""; }
+
+function card(key){
+  let c=$("card-"+key);
+  if(!c){ c=document.createElement("div"); c.className="card"; c.id="card-"+key;
+    const s=STEPS.find(x=>x.key===key)||{icon:"•"};
+    c.innerHTML=`<div class="hd"><div class="ic">${s.icon}</div><div class="nm">${TITLE[key]||key}</div><div class="meta" id="meta-${key}"></div></div><div class="bd" id="bd-${key}"><span class="spinner"></span> working…</div>`;
+    $("stages").appendChild(c);
   }
-  return `<div class="rcard" onclick="toggle(this)"><div class="rhead"><span class="n">${idx+1}</span>`
-    + `<span class="title">${TITLES[node.name]||node.name}</span><span class="model">${esc(node.model)}</span>`
-    + `<span class="chev">›</span></div><div class="rbody">${body}</div></div>`;
+  return c;
+}
+function bd(key){ return $("bd-"+key); }
+
+function editor(fn,color,lang,content){
+  return `<div class="editor"><div class="bar"><span class="dot" style="background:${color}"></span><span class="fn">${esc(fn)}</span><span class="lang">${lang}</span></div><pre>${code(content)}</pre></div>`;
 }
 
-function onLiveToggle(){
-  const live=document.getElementById("live").checked;
-  document.getElementById("runmeta").innerHTML = live
-    ? 'Live: clones the repo / GitHub URL above and analyses it with the model in your <code>.env</code> (e.g. Azure GPT‑5.6). Takes ~20–40s.'
-    : 'Offline (default): analyses the bundled sample app — free, instant, no credentials. Tick <b>run live</b> to analyse your own repo.';
+function renderClone(ev){
+  const files=(ev.files||[]).map(f=>`<span class="fchip">${esc(f)}</span>`).join("");
+  bd("clone").innerHTML = editor(ev.remote?"$ git clone "+($("target").value):"local directory","#2dd4bf","shell",
+      (ev.remote?"Cloning "+$("target").value+"\n":"")+"Resolved "+ev.fileCount+" files")
+    + `<div class="filechips">${files}</div>`;
+}
+function renderAssess(o){
+  bd("assess").innerHTML = `<div class="grid">
+    <div class="stat"><div class="l">language</div><div class="v">${esc(o.language)}</div></div>
+    <div class="stat"><div class="l">framework</div><div class="v">${esc(o.framework)}</div></div>
+    <div class="stat"><div class="l">entrypoint</div><div class="v">${esc(o.entrypoint)}</div></div>
+    <div class="stat"><div class="l">ports</div><div class="v">${esc(JSON.stringify(o.ports||[]))}</div></div>
+    <div class="stat"><div class="l">build</div><div class="v">${esc(o.build_system)}</div></div>
+   </div>` + (o.notes?`<div class="kv">${esc(o.notes)}</div>`:"");
+}
+function renderContainerize(o){
+  const notes=(o.security_notes||[]).map(n=>`<span class="tag">✓ ${esc(n)}</span>`).join("");
+  bd("containerize").innerHTML = `<div class="kv">base <b>${esc(o.base_image)}</b> · multistage <b>${o.multistage}</b> · non-root <b>${o.runs_as_nonroot}</b></div>`
+    + `<div class="tags">${notes}</div>` + editor("Dockerfile","#0db7ed","dockerfile",o.content);
+}
+function renderPipeline(o){
+  const st=(o.stages||[]).map(s=>`<span class="badge">${esc(s)}</span>`).join(" ");
+  bd("pipeline").innerHTML = `<div class="tags">${st}</div>` + editor(".github/workflows/deliver.yml","#818cf8","yaml",o.content);
+}
+function renderDeploy(o){
+  let h=`<div class="kv">strategy <b>${esc(o.strategy)}</b> · rollback: ${esc(o.rollback)}</div>`;
+  (o.manifests||[]).forEach(m=> h+=editor(m.path,"#326ce5","yaml",m.content));
+  bd("deploy_plan").innerHTML=h;
+}
+function renderVerify(o){
+  const v=o.passed?`<span class="verdict pass">✓ PASSED — safe to review</span>`:`<span class="verdict fail">✗ FAILED</span>`;
+  const checks=(o.checks||[]).map(c=>`<div class="kv">✓ ${esc(c)}</div>`).join("");
+  const issues=(o.issues||[]).map(i=>`<div class="kv" style="color:var(--bad)">✗ ${esc(i)}</div>`).join("");
+  bd("verify_artifacts").innerHTML=v+checks+issues;
+}
+function renderPR(pr){
+  const b=bd("pr");
+  if(!pr){ b.innerHTML=`<div class="kv">—</div>`; return; }
+  if(pr.pr_url){ let h=`<div class="prbanner">📬 <b>Pull request opened:</b> <a href="${esc(pr.pr_url)}" target="_blank">${esc(pr.pr_url)}</a></div>`;
+    if((pr.skipped||[]).length) h+=`<div class="warn">skipped ${pr.skipped.map(s=>esc(s.path)).join(", ")} — add “Workflows” permission to include the CI file</div>`;
+    b.innerHTML=h; }
+  else if(pr.compare_url){ b.innerHTML=`<div class="prbanner">📦 Files pushed to <b>${esc(pr.branch)}</b> — <a href="${esc(pr.compare_url)}" target="_blank">open the pull request →</a><div class="warn">add “Pull requests: write” to your token to auto-open it</div></div>`; }
+  else { b.innerHTML=`<div class="warn">PR: ${esc(pr.detail||pr.error||"failed")}</div>`; }
+}
+const RENDER={assess:renderAssess,containerize:renderContainerize,pipeline:renderPipeline,deploy_plan:renderDeploy,verify_artifacts:renderVerify};
+
+function handle(ev){
+  const k=ev.stage;
+  if(k==="error"){ think("Something went wrong","<span style='color:var(--bad)'>"+esc(ev.error)+"</span>","err"); return; }
+  if(k==="complete"){ think("✓ Delivery complete", ev.totalTokens+" tokens · "+($("live").checked?"Azure GPT‑5.6":"offline"), "done"); return; }
+
+  if(ev.status==="start"){
+    if(STEPS.find(s=>s.key===k)) setStep(k,"active");
+    think((TITLE[k]||k)+"…", esc(ev.thinking||""), null);
+    card(k);
+  } else if(ev.status==="done"){
+    setStep(k,"done");
+    if(k==="clone"){ renderClone(ev); }
+    else if(k==="pr"){ card("pr"); renderPR(ev.pr); }
+    else if(RENDER[k]){ RENDER[k](ev.output||{}); $("meta-"+k).textContent = (ev.tokens||0)+" tok · "+(ev.model||""); }
+  } else if(ev.status==="error"){
+    setStep(k,"err"); const b=bd(k); if(b) b.innerHTML=`<div class="warn">${esc(ev.error)}</div>`;
+    think("Stopped at "+(TITLE[k]||k), esc(ev.error), "err");
+  }
 }
 
-async function runDeliver(){
-  const btn=document.getElementById("runbtn"), meta=document.getElementById("runmeta"), res=document.getElementById("results");
-  const target=document.getElementById("target").value.trim()||"examples/checkout-svc";
-  const live=document.getElementById("live").checked;
-  const openpr=document.getElementById("openpr").checked;
-  btn.disabled=true; res.innerHTML=""; resetNodes();
-  meta.innerHTML = live ? 'Cloning &amp; running live on your repo… (~20–40s)' : 'Running…';
-  // cycle the active node continuously while the request is in flight
-  let step=0; const anim=setInterval(()=>{
-    DELIVER_NODES.forEach((n,i)=>{const e=document.getElementById("n-"+n); if(e) e.classList.toggle("active", i===step);});
-    step=(step+1)%DELIVER_NODES.length;
-  },380);
+async function run(){
+  const btn=$("runbtn"); const target=$("target").value.trim()||"examples/checkout-svc";
+  const live=$("live").checked, pr=$("openpr").checked;
+  btn.disabled=true; $("stages").innerHTML=""; buildRail();
+  think("Starting…", live?"cloning and running on your model":"running the sample offline", null);
   try{
-    const r=await fetch("/api/deliver/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target,live,pr:openpr})});
-    const data = r.ok ? await r.json() : {error:"HTTP "+r.status};
-    clearInterval(anim);
-    if(data.error){
-      resetNodes();
-      meta.innerHTML=`<span style="color:var(--bad)">✗ ${esc(data.error)}</span>`;
-      return;
+    const resp=await fetch("/api/deliver/stream",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target,live,pr})});
+    if(!resp.ok || !resp.body) throw new Error("HTTP "+resp.status);
+    const reader=resp.body.getReader(), dec=new TextDecoder(); let buf="";
+    while(true){
+      const {value,done}=await reader.read(); if(done) break;
+      buf+=dec.decode(value,{stream:true});
+      let i; while((i=buf.indexOf("\n\n"))>=0){ const chunk=buf.slice(0,i); buf=buf.slice(i+2);
+        if(chunk.startsWith("data:")){ try{ handle(JSON.parse(chunk.slice(5).trim())); }catch(e){} } }
     }
-    DELIVER_NODES.forEach(n=>{const e=document.getElementById("n-"+n);if(e){e.classList.remove("active");e.classList.add("done");}});
-    const modeTag = data.live ? `<b style="color:var(--deliver)">live</b>` : `offline`;
-    let prLine = "";
-    if(data.pr){
-      if(data.pr.pr_url){
-        prLine = `<br>📬 <b style="color:var(--deliver)">Pull request opened:</b> <a href="${esc(data.pr.pr_url)}" target="_blank">${esc(data.pr.pr_url)}</a>`;
-        const sk = data.pr.skipped || [];
-        if(sk.length) prLine += `<br><span style="color:var(--human)">skipped: ${sk.map(s=>esc(s.path)).join(", ")} — add the “Workflows” permission to your token to include the CI file</span>`;
-      }
-      else if(data.pr.compare_url){
-        prLine = `<br>📦 Files pushed to <b>${esc(data.pr.branch)}</b> — <a href="${esc(data.pr.compare_url)}" target="_blank">open the pull request →</a> <span style="color:var(--human)">(add “Pull requests: write” to your token to auto-open it)</span>`;
-      }
-      else if(data.pr.error) prLine = `<br><span style="color:var(--human)">PR: ${esc(data.pr.detail || data.pr.error)}</span>`;
-    }
-    meta.innerHTML=`<b style="color:var(--ok)">✓ ${esc(data.id)}</b> — ${modeTag} · ${data.nodes.length} nodes · ${data.totalTokens} tokens · target <b>${esc(data.target)}</b>${prLine}`;
-    res.innerHTML=data.nodes.map((n,i)=>renderNode(n,i)).join("");
-    const first=res.querySelector(".rcard"); if(first) first.classList.add("open");
-  }catch(e){
-    clearInterval(anim); resetNodes();
-    meta.innerHTML=`<span style="color:var(--bad)">Run failed: ${esc(e.message)}</span> — is the server running?`;
-  }finally{ btn.disabled=false; }
+  }catch(e){ think("Run failed", esc(e.message)+" — is the server running?", "err"); }
+  finally{ btn.disabled=false; }
 }
 </script>
 </body>

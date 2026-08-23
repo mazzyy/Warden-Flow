@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -614,6 +614,58 @@ async def deliver_run(body: DeliverBody) -> dict:
             for r in result.runs
         ],
     }
+
+
+@app.post("/api/deliver/stream")
+async def deliver_stream(body: DeliverBody):
+    """Stream the workflow as Server-Sent Events, one per stage, so the UI shows
+    the work live: cloning, then each node active, then its real output."""
+    import json
+
+    from warden.config import GitHubCredential
+    from warden.control_plane.store import InMemoryStore
+    from warden.delivery.fixtures import delivery_scripted_models
+    from warden.delivery.orchestrator import deliver_events
+    from warden.estate.fake import FakeAdapter
+    from warden.llm import load_env_file
+    from warden.tools.github_client import GitHubClient
+
+    s = settings()
+    target = body.target or "examples/checkout-svc"
+
+    def sse(obj) -> str:
+        return f"data: {json.dumps(obj)}\n\n"
+
+    async def gen():
+        if body.live:
+            load_env_file()
+            models = None
+        else:
+            if target != "examples/checkout-svc":
+                yield sse({"stage": "clone", "status": "error",
+                           "error": "Offline mode only demos the sample app. Tick “run live” "
+                           "to clone and analyse your own repo."})
+                return
+            models = delivery_scripted_models()
+
+        store = InMemoryStore()
+        github = GitHubClient(
+            repo_full_name=s.gitops_full_name,
+            base_branch=s.gitops_base_branch,
+            credential=GitHubCredential(kind="none", label="studio", enforced=False),
+        )
+        fleet = load_all(Path(s.manifest_dir).parent / "delivery")
+        try:
+            async for ev in deliver_events(
+                target=target, fleet=fleet, store=store, github=github,
+                estate=FakeAdapter("healthy"), models=models, do_pr=(body.live and body.pr),
+            ):
+                yield sse(ev)
+        except Exception as exc:
+            yield sse({"stage": "error", "status": "error",
+                       "error": f"{type(exc).__name__}: {exc}"[:300]})
+
+    return StreamingResponse(gen(), media_type="text/event-stream")
 
 
 @app.get("/")
