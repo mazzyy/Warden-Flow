@@ -173,6 +173,10 @@ async def main(
                 created = outcome.get("files_created", [])
                 if created:
                     print(f"  {DIM}added: {', '.join(created)}{RESET}")
+                for sk in outcome.get("skipped", []):
+                    print(f"  {YELLOW}skipped {sk['path']} — {sk['reason']}{RESET}")
+                if any(".github/workflows" in s["path"] for s in outcome.get("skipped", [])):
+                    print(f"  {DIM}(add the 'Workflows' permission to your token to include the CI file){RESET}")
 
     # -- write artifacts into the repo, and (optionally) build/push/deploy ----
     if (write or apply_it) and not result.stopped_at:

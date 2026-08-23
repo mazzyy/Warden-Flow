@@ -318,30 +318,55 @@ class GitHubClient:
             base_sha = repo.get_branch(base).commit.sha
             repo.create_git_ref(ref=f"refs/heads/{branch}", sha=base_sha)
 
-            created, updated = [], []
+            created, updated, skipped = [], [], []
             for path, content in changes.items():
                 try:
                     existing = repo.get_contents(path, ref=branch)
-                    if existing.decoded_content.decode() == content:
-                        continue
-                    repo.update_file(path, f"chore(devops): update {path}", content,
-                                     existing.sha, branch=branch)
-                    updated.append(path)
+                    exists = True
                 except Exception:
-                    # Not found on the branch — create it.
-                    repo.create_file(path, f"chore(devops): add {path}", content, branch=branch)
-                    created.append(path)
+                    existing, exists = None, False
+                try:
+                    if exists:
+                        if existing.decoded_content.decode() == content:
+                            continue
+                        repo.update_file(path, f"chore(devops): update {path}", content,
+                                         existing.sha, branch=branch)
+                        updated.append(path)
+                    else:
+                        repo.create_file(path, f"chore(devops): add {path}", content, branch=branch)
+                        created.append(path)
+                except Exception as exc:
+                    # A file we could not write — most often .github/workflows/* when
+                    # the token lacks the Workflows permission. Skip it, keep the rest,
+                    # and report it rather than failing the whole pull request.
+                    skipped.append({"path": path, "reason": str(exc)[:160]})
 
             if not created and not updated:
                 with contextlib.suppress(Exception):
                     repo.get_git_ref(f"heads/{branch}").delete()
-                return {"error": "no_changes_needed",
-                        "detail": "the repo already contains exactly these files."}
+                detail = "the repo already contains exactly these files."
+                if skipped:
+                    detail = "could not write any file: " + "; ".join(
+                        f"{s['path']} ({s['reason']})" for s in skipped
+                    )
+                return {"error": "no_files_written", "detail": detail, "skipped": skipped}
 
-            pr = repo.create_pull(title=title, body=signed_body, head=branch, base=base)
+            compare = f"https://github.com/{self._repo_name}/compare/{base}...{branch}?expand=1"
+            try:
+                pr = repo.create_pull(title=title, body=signed_body, head=branch, base=base)
+            except Exception as exc:
+                # Files are already committed to the branch; only opening the PR
+                # failed — almost always a token missing 'Pull requests: write'.
+                # Hand back a one-click compare URL so the run is not wasted.
+                return {"dry_run": False, "pr_url": None, "compare_url": compare,
+                        "branch": branch, "base": base, "files_created": created,
+                        "files_updated": updated, "skipped": skipped, "error": "pr_create_failed",
+                        "detail": (f"Files were committed to branch '{branch}', but opening the "
+                                   f"pull request failed ({str(exc)[:80]}). The token likely lacks "
+                                   f"'Pull requests: write'. Open the PR here: {compare}")}
             return {"dry_run": False, "pr_url": pr.html_url, "pr_number": pr.number,
-                    "branch": branch, "base": base,
-                    "files_created": created, "files_updated": updated}
+                    "branch": branch, "base": base, "compare_url": compare,
+                    "files_created": created, "files_updated": updated, "skipped": skipped}
 
         try:
             return await asyncio.to_thread(_open)

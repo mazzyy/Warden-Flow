@@ -265,7 +265,14 @@ async function runDeliver(){
     const modeTag = data.live ? `<b style="color:var(--deliver)">live</b>` : `offline`;
     let prLine = "";
     if(data.pr){
-      if(data.pr.pr_url) prLine = `<br>📬 <b style="color:var(--deliver)">Pull request opened:</b> <a href="${esc(data.pr.pr_url)}" target="_blank">${esc(data.pr.pr_url)}</a>`;
+      if(data.pr.pr_url){
+        prLine = `<br>📬 <b style="color:var(--deliver)">Pull request opened:</b> <a href="${esc(data.pr.pr_url)}" target="_blank">${esc(data.pr.pr_url)}</a>`;
+        const sk = data.pr.skipped || [];
+        if(sk.length) prLine += `<br><span style="color:var(--human)">skipped: ${sk.map(s=>esc(s.path)).join(", ")} — add the “Workflows” permission to your token to include the CI file</span>`;
+      }
+      else if(data.pr.compare_url){
+        prLine = `<br>📦 Files pushed to <b>${esc(data.pr.branch)}</b> — <a href="${esc(data.pr.compare_url)}" target="_blank">open the pull request →</a> <span style="color:var(--human)">(add “Pull requests: write” to your token to auto-open it)</span>`;
+      }
       else if(data.pr.error) prLine = `<br><span style="color:var(--human)">PR: ${esc(data.pr.detail || data.pr.error)}</span>`;
     }
     meta.innerHTML=`<b style="color:var(--ok)">✓ ${esc(data.id)}</b> — ${modeTag} · ${data.nodes.length} nodes · ${data.totalTokens} tokens · target <b>${esc(data.target)}</b>${prLine}`;
