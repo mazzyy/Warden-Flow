@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Warden Flow — DevOps Studio</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --bg:#0b0f17;--panel:#111826;--panel2:#0e1521;--line:#1e293b;--line2:#243043;
+    --ink:#e6edf6;--sub:#8b97a8;--dim:#5b6675;
+    --deliver:#2dd4bf;--operate:#818cf8;--human:#f59e0b;--ok:#34d399;--bad:#f87171;
+    --mono:'SFMono-Regular',ui-monospace,Menlo,Consolas,monospace;
+  }
+  body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  a{color:var(--deliver);text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:1280px;margin:0 auto;padding:28px 28px 60px}
+  header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:6px;flex-wrap:wrap}
+  .brand{display:flex;align-items:baseline;gap:12px}
+  h1{font-size:24px;font-weight:800;letter-spacing:-.02em}
+  .brand .t{font-size:13px;color:var(--sub);font-weight:600}
+  .navlinks{display:flex;gap:10px;align-items:center;font-size:13px}
+  .navlinks a{padding:6px 12px;border:1px solid var(--line2);border-radius:8px;color:var(--ink)}
+  .lead{color:var(--sub);font-size:14.5px;max-width:900px;margin:10px 0 22px}
+  .lead b{color:var(--ink)}
+  .models{font-size:12.5px;color:var(--dim);margin-bottom:26px}
+  .models b{color:var(--sub)}
+  section{margin-bottom:30px}
+  .h2{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);font-weight:700;margin-bottom:14px}
+
+  /* lifecycle lanes */
+  .lane{display:flex;align-items:stretch;gap:8px;margin-bottom:12px;overflow-x:auto;padding-bottom:6px}
+  .lanetag{width:96px;flex:none;display:flex;flex-direction:column;justify-content:center;gap:2px}
+  .lanetag .nm{font-weight:800;font-size:14px;letter-spacing:.02em}
+  .lanetag .kd{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--dim);font-weight:700}
+  .deliver .nm{color:var(--deliver)} .operate .nm{color:var(--operate)}
+  .node{min-width:150px;flex:1;background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:11px 12px;
+    display:flex;flex-direction:column;gap:6px;transition:.25s;position:relative}
+  .node .top{position:absolute;left:0;right:0;top:0;height:3px;border-radius:11px 11px 0 0;opacity:.5}
+  .deliver .node .top{background:var(--deliver)} .operate .node .top{background:var(--operate)}
+  .node.human .top{background:var(--human);opacity:.9}
+  .node .nm{font-size:13.5px;font-weight:700;display:flex;align-items:center;gap:6px}
+  .node .q{font-size:11.5px;color:var(--sub);line-height:1.35}
+  .node .out{font-family:var(--mono);font-size:10.5px;color:var(--deliver);opacity:.85;margin-top:auto}
+  .node.human .out{color:var(--human)}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--dim);flex:none}
+  .node.active{border-color:var(--deliver);box-shadow:0 0 0 1px var(--deliver),0 0 22px -6px var(--deliver)}
+  .node.active .dot{background:var(--deliver);animation:pulse 1s infinite}
+  .node.done .dot{background:var(--ok)} .node.done{border-color:var(--line2)}
+  .node.human .dot{background:var(--human)}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  .arrow{align-self:center;color:var(--dim);font-size:14px;flex:none}
+
+  /* run panel */
+  .panel{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .runbar{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+  .field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:260px}
+  .field label{font-size:11px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
+  .field input{background:#0a1019;border:1px solid var(--line2);color:var(--ink);border-radius:9px;padding:10px 12px;
+    font-family:var(--mono);font-size:13px}
+  .field input:focus{outline:none;border-color:var(--deliver)}
+  button.run{background:var(--deliver);color:#04211d;border:none;border-radius:9px;padding:11px 20px;font-weight:750;
+    font-size:14px;cursor:pointer;transition:.15s;white-space:nowrap}
+  button.run:hover{filter:brightness(1.08)} button.run:disabled{opacity:.5;cursor:not-allowed}
+  .runmeta{font-size:12px;color:var(--sub);margin-top:12px;font-family:var(--mono)}
+
+  /* results */
+  #results{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+  .rcard{background:var(--panel);border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .rhead{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;user-select:none}
+  .rhead .n{width:22px;height:22px;border-radius:6px;background:var(--deliver);color:#04211d;font-weight:800;font-size:12px;
+    display:flex;align-items:center;justify-content:center;flex:none}
+  .rhead .title{font-weight:700;font-size:14px}
+  .rhead .model{font-family:var(--mono);font-size:11px;color:var(--dim);margin-left:auto}
+  .rhead .chev{color:var(--dim);transition:.2s}
+  .rcard.open .chev{transform:rotate(90deg)}
+  .rbody{display:none;padding:0 14px 14px;border-top:1px solid var(--line)}
+  .rcard.open .rbody{display:block}
+  .kv{font-size:12.5px;color:var(--sub);margin:8px 0}
+  .kv b{color:var(--ink);font-weight:650}
+  .tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+  .tag{background:#0c2a24;color:var(--ok);border:1px solid #14532d;border-radius:999px;padding:3px 9px;font-size:11px;font-weight:600}
+  pre{background:#0a1019;border:1px solid var(--line2);border-radius:9px;padding:12px;overflow-x:auto;
+    font-family:var(--mono);font-size:11.5px;color:#cbd5e1;margin-top:8px;line-height:1.5}
+  .verdict{display:inline-flex;align-items:center;gap:6px;font-weight:750;font-size:13px}
+  .verdict.pass{color:var(--ok)} .verdict.fail{color:var(--bad)}
+
+  /* connect panel */
+  .steps{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:820px){.steps{grid-template-columns:1fr}}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px}
+  .step h3{font-size:14px;font-weight:750;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .step .num{width:22px;height:22px;border-radius:6px;background:var(--operate);color:#0b0f17;font-weight:800;font-size:12px;
+    display:flex;align-items:center;justify-content:center}
+  .step p{font-size:13px;color:var(--sub);margin-bottom:8px}
+  .foot{margin-top:30px;color:var(--dim);font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><h1>Warden Flow</h1><span class="t">DevOps Studio</span></div>
+    <div class="navlinks">
+      <a href="/incidents">Incident dashboard →</a>
+    </div>
+  </header>
+  <div class="lead">An AI DevOps engineer as a multi-node LLM workflow. <b>DELIVER</b> ships a service — assess a repo, generate a Dockerfile, a CI/CD pipeline and a deploy plan; <b>OPERATE</b> keeps it healthy. Every node returns a <b>typed object</b> and hands it to the next; the only step that changes production is a human merge.</div>
+  <div class="models">Models swappable per node — <b>Google Gemini 3.5</b> · <b>Azure OpenAI GPT‑5.6</b> · OpenAI · Anthropic.</div>
+
+  <!-- LIFECYCLE -->
+  <section>
+    <div class="h2">The lifecycle</div>
+    <div class="lane deliver">
+      <div class="lanetag"><span class="kd">proactive</span><span class="nm">DELIVER</span></div>
+      <div class="node" id="n-assess"><div class="top"></div><div class="nm"><span class="dot"></span>Assess</div><div class="q">Profile the repo</div><div class="out">RepoProfile</div></div>
+      <span class="arrow">→</span>
+      <div class="node" id="n-containerize"><div class="top"></div><div class="nm"><span class="dot"></span>Containerize</div><div class="q">Write a secure Dockerfile</div><div class="out">Dockerfile</div></div>
+      <span class="arrow">→</span>
+      <div class="node" id="n-pipeline"><div class="top"></div><div class="nm"><span class="dot"></span>Pipeline</div><div class="q">Write CI/CD</div><div class="out">Pipeline</div></div>
+      <span class="arrow">→</span>
+      <div class="node" id="n-deploy_plan"><div class="top"></div><div class="nm"><span class="dot"></span>Deploy&nbsp;Plan</div><div class="q">Manifests + rollout</div><div class="out">DeployPlan</div></div>
+      <span class="arrow">→</span>
+      <div class="node human"><div class="top"></div><div class="nm"><span class="dot"></span>Human&nbsp;Review</div><div class="q">Approve as a PR</div><div class="out">your call</div></div>
+      <span class="arrow">→</span>
+      <div class="node" id="n-verify_artifacts"><div class="top"></div><div class="nm"><span class="dot"></span>Verify</div><div class="q">Validate all of it</div><div class="out">VerifyReport</div></div>
+    </div>
+    <div class="lane operate">
+      <div class="lanetag"><span class="kd">reactive</span><span class="nm">OPERATE</span></div>
+      <div class="node"><div class="top"></div><div class="nm"><span class="dot"></span>Triage</div><div class="q">Real? escalate?</div><div class="out">TriageVerdict</div></div>
+      <span class="arrow">→</span>
+      <div class="node"><div class="top"></div><div class="nm"><span class="dot"></span>Diagnose</div><div class="q">Root cause + evidence</div><div class="out">Diagnosis</div></div>
+      <span class="arrow">→</span>
+      <div class="node"><div class="top"></div><div class="nm"><span class="dot"></span>Remediate</div><div class="q">Smallest fix → PR</div><div class="out">ProposedPatch</div></div>
+      <span class="arrow">→</span>
+      <div class="node human"><div class="top"></div><div class="nm"><span class="dot"></span>Human&nbsp;Review</div><div class="q">Merge or reject</div><div class="out">your call</div></div>
+      <span class="arrow">→</span>
+      <div class="node"><div class="top"></div><div class="nm"><span class="dot"></span>Verify</div><div class="q">Did it recover?</div><div class="out">verdict</div></div>
+    </div>
+  </section>
+
+  <!-- RUN -->
+  <section>
+    <div class="h2">Run the DELIVER workflow</div>
+    <div class="panel">
+      <div class="runbar">
+        <div class="field">
+          <label>Project directory (on the server)</label>
+          <input id="target" value="examples/checkout-svc" spellcheck="false" />
+        </div>
+        <button class="run" id="runbtn" onclick="runDeliver()">▶ Run delivery</button>
+      </div>
+      <div class="runmeta" id="runmeta">Runs the five DELIVER nodes and shows each node's real output. Offline &amp; free — no credentials needed.</div>
+      <div id="results"></div>
+    </div>
+  </section>
+
+  <!-- CONNECT -->
+  <section>
+    <div class="h2">Connect your project</div>
+    <div class="steps">
+      <div class="step">
+        <h3><span class="num">1</span>Point the agent at your repo</h3>
+        <p>The workflow reads a local directory. Use the box above, or the CLI with any folder:</p>
+        <pre>make deliver-live \
+  # or:
+./.venv/bin/python -m warden.deliver \
+      --target /path/to/your/repo --live</pre>
+        <p>Assess reads your dependency manifest and entrypoint; the rest of the workflow builds on that.</p>
+      </div>
+      <div class="step">
+        <h3><span class="num">2</span>Choose the model (optional)</h3>
+        <p>Default is Gemini. To run on your <b>Azure GPT‑5.6</b>, add to <code>.env</code>:</p>
+        <pre>DELIVER_MODEL=azure/gpt-5.6-sol
+AZURE_API_KEY=…
+AZURE_API_BASE=https://&lt;resource&gt;.openai.azure.com/
+AZURE_API_VERSION=2024-12-01-preview</pre>
+        <p>Every node then runs on that model — same governance and typed output.</p>
+      </div>
+      <div class="step">
+        <h3><span class="num">3</span>Review &amp; ship</h3>
+        <p>The workflow opens the generated Dockerfile, pipeline and manifests as a pull request. A human approves — that's the only step that changes production.</p>
+      </div>
+      <div class="step">
+        <h3><span class="num">4</span>Prove it beats a single prompt</h3>
+        <p>The benchmark scores the same job both ways, on the real Dockerfile:</p>
+        <pre>make bench-deliver
+# single prompt 0/5  ·  warden flow 5/5</pre>
+      </div>
+    </div>
+  </section>
+
+  <div class="foot">Warden Flow · one structured-prompting engine, two workflows · nodes are version-controlled manifests</div>
+</div>
+
+<script>
+const DELIVER_NODES = ["assess","containerize","pipeline","deploy_plan","verify_artifacts"];
+const TITLES = {assess:"Assess",containerize:"Containerize",pipeline:"Pipeline",deploy_plan:"Deploy Plan",verify_artifacts:"Verify"};
+
+function esc(s){return (s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function resetNodes(){DELIVER_NODES.forEach(n=>{const e=document.getElementById("n-"+n);if(e){e.classList.remove("active","done");}});}
+function toggle(el){el.classList.toggle("open");}
+
+function renderNode(node, idx){
+  const o = node.output || {};
+  let body = `<div class="kv">${node.tokens} tokens · <b>${esc(node.model)}</b></div>`;
+  if(node.name==="assess"){
+    body += `<div class="kv">language <b>${esc(o.language)}</b> · entrypoint <b>${esc(o.entrypoint)}</b> · ports <b>${JSON.stringify(o.ports||[])}</b> · build <b>${esc(o.build_system)}</b></div>`;
+    if(o.notes) body += `<div class="kv">${esc(o.notes)}</div>`;
+  } else if(node.name==="containerize"){
+    body += `<div class="kv">base <b>${esc(o.base_image)}</b> · multistage <b>${o.multistage}</b> · non-root <b>${o.runs_as_nonroot}</b></div>`;
+    body += `<div class="tags">${(o.security_notes||[]).map(s=>`<span class="tag">✓ ${esc(s)}</span>`).join("")}</div>`;
+    body += `<pre>${esc(o.content)}</pre>`;
+  } else if(node.name==="pipeline"){
+    body += `<div class="kv">stages <b>${(o.stages||[]).join(" → ")}</b></div><pre>${esc(o.content)}</pre>`;
+  } else if(node.name==="deploy_plan"){
+    body += `<div class="kv">strategy <b>${esc(o.strategy)}</b></div><div class="kv">rollback: ${esc(o.rollback)}</div>`;
+    for(const [p,y] of Object.entries(o.manifests||{})) body += `<div class="kv"><b>${esc(p)}</b></div><pre>${esc(y)}</pre>`;
+  } else if(node.name==="verify_artifacts"){
+    const cls = o.passed ? "pass":"fail";
+    body += `<div class="verdict ${cls}">${o.passed?"✓ PASSED":"✗ FAILED"}</div>`;
+    body += `<div class="tags">${(o.checks||[]).map(c=>`<span class="tag">✓ ${esc(c)}</span>`).join("")}</div>`;
+    if((o.issues||[]).length) body += (o.issues).map(i=>`<div class="kv" style="color:var(--bad)">✗ ${esc(i)}</div>`).join("");
+  }
+  return `<div class="rcard" onclick="toggle(this)"><div class="rhead"><span class="n">${idx+1}</span>`
+    + `<span class="title">${TITLES[node.name]||node.name}</span><span class="model">${esc(node.model)}</span>`
+    + `<span class="chev">›</span></div><div class="rbody">${body}</div></div>`;
+}
+
+async function runDeliver(){
+  const btn=document.getElementById("runbtn"), meta=document.getElementById("runmeta"), res=document.getElementById("results");
+  const target=document.getElementById("target").value.trim()||"examples/checkout-svc";
+  btn.disabled=true; res.innerHTML=""; resetNodes(); meta.textContent="Running…";
+  // animate nodes stepping through while the request runs
+  let step=0; const anim=setInterval(()=>{
+    if(step>0){const p=document.getElementById("n-"+DELIVER_NODES[step-1]); if(p)p.classList.replace("active","done");}
+    if(step<DELIVER_NODES.length){const e=document.getElementById("n-"+DELIVER_NODES[step]); if(e)e.classList.add("active"); step++;}
+  },260);
+  try{
+    const r=await fetch("/api/deliver/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target})});
+    if(!r.ok) throw new Error("HTTP "+r.status);
+    const data=await r.json();
+    clearInterval(anim);
+    DELIVER_NODES.forEach(n=>{const e=document.getElementById("n-"+n);if(e){e.classList.remove("active");e.classList.add("done");}});
+    meta.innerHTML=`<b style="color:var(--ok)">✓ ${esc(data.id)}</b> — ${data.nodes.length} nodes · ${data.totalTokens} tokens · target <b>${esc(data.target)}</b>`;
+    res.innerHTML=data.nodes.map((n,i)=>renderNode(n,i)).join("");
+    const first=res.querySelector(".rcard"); if(first) first.classList.add("open");
+  }catch(e){
+    clearInterval(anim); resetNodes();
+    meta.innerHTML=`<span style="color:var(--bad)">Run failed: ${esc(e.message)}</span> — is the server running? Try <code>./.venv/bin/python -m warden.deliver</code> in a terminal.`;
+  }finally{ btn.disabled=false; }
+}
+</script>
+</body>
+</html>

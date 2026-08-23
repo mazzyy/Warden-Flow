@@ -513,6 +513,70 @@ async def policy_matrix() -> dict:
 
 
 # --------------------------------------------------------------------------
+# DELIVER workflow — run it from the Studio page and return the real trace.
+# Registered before the SPA catch-all so /studio and / resolve to this page.
+# --------------------------------------------------------------------------
+
+STUDIO = Path(__file__).parent / "studio.html"
+
+
+class DeliverBody(BaseModel):
+    target: str = "examples/checkout-svc"
+
+
+@app.post("/api/deliver/run")
+async def deliver_run(body: DeliverBody) -> dict:
+    from warden.config import GitHubCredential
+    from warden.control_plane.store import InMemoryStore
+    from warden.delivery.fixtures import delivery_scripted_models
+    from warden.delivery.orchestrator import deliver
+    from warden.estate.fake import FakeAdapter
+    from warden.tools.github_client import GitHubClient
+    from warden.tools.toolbox import ToolBox
+
+    s = settings()
+    target = body.target or "examples/checkout-svc"
+    store = InMemoryStore()
+    github = GitHubClient(
+        repo_full_name=s.gitops_full_name,
+        base_branch=s.gitops_base_branch,
+        credential=GitHubCredential(kind="none", label="studio", enforced=False),
+    )
+    toolbox = ToolBox(estate=FakeAdapter("healthy"), store=store, github=github, source_root=target)
+    fleet = load_all(Path(s.manifest_dir).parent / "delivery")
+    # Offline scripted: the Studio button is free, fast and safe to click on the
+    # judging URL. `make deliver-live` runs the same nodes on real models.
+    result = await deliver(
+        target=target, fleet=fleet, toolbox=toolbox, store=store, models=delivery_scripted_models()
+    )
+    return {
+        "id": result.id,
+        "target": target,
+        "totalTokens": result.total_tokens,
+        "stoppedAt": result.stopped_at,
+        "nodes": [
+            {
+                "name": r.run.agent,
+                "model": r.run.model,
+                "tokens": r.run.total_tokens,
+                "output": r.structured or {},
+            }
+            for r in result.runs
+        ],
+    }
+
+
+@app.get("/")
+async def studio_root() -> FileResponse:
+    return FileResponse(STUDIO)
+
+
+@app.get("/studio")
+async def studio_page() -> FileResponse:
+    return FileResponse(STUDIO)
+
+
+# --------------------------------------------------------------------------
 # The SPA. Mounted last so it never shadows an /api route.
 # --------------------------------------------------------------------------
 
