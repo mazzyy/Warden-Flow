@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{--ink:#0f172a;--sub:#475569;--line:#cbd5e1;--bg:#f8fafc;
+    --deliver:#0d9488;--operate:#4f46e5;--human:#d97706;--ok:#059669;--mono:#047857;--monobg:#ecfdf5}
+  body{background:var(--bg);color:var(--ink);width:1840px;padding:44px 40px 40px;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .head{display:flex;align-items:baseline;gap:16px;margin-bottom:4px}
+  h1{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .tag{font-size:14px;color:var(--sub);font-weight:600}
+  .sub{font-size:14.5px;color:var(--sub);margin:8px 0 8px;max-width:1300px;line-height:1.5}
+  .models{font-size:12.5px;color:var(--sub);margin-bottom:24px;font-weight:600}
+  .models b{color:#334155}
+  .lane{display:flex;align-items:stretch;gap:0;margin-bottom:20px}
+  .lanelabel{width:120px;flex:none;display:flex;flex-direction:column;justify-content:center;gap:6px;padding-right:14px}
+  .lanelabel .nm{font-size:15px;font-weight:800;letter-spacing:.02em}
+  .lanelabel .kd{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--sub)}
+  .deliver .nm{color:var(--deliver)} .operate .nm{color:var(--operate)}
+  .node{width:210px;background:#fff;border:1px solid var(--line);border-radius:12px;
+    box-shadow:0 1px 2px rgba(15,23,42,.05);overflow:hidden;display:flex;flex-direction:column;min-height:150px}
+  .node .top{height:5px}
+  .deliver .node .top{background:var(--deliver)} .operate .node .top{background:var(--operate)}
+  .node.human .top{background:var(--human)} .node.term .top{background:var(--ok)}
+  .node .b{padding:11px 12px 12px;display:flex;flex-direction:column;gap:7px;flex:1}
+  .nrow{display:flex;align-items:center;gap:7px}
+  .num{width:20px;height:20px;border-radius:6px;background:var(--ink);color:#fff;font-size:11px;font-weight:700;
+    display:flex;align-items:center;justify-content:center}
+  .human .num{background:var(--human)} .term .num{background:var(--ok)}
+  .name{font-size:14.5px;font-weight:750}
+  .q{font-size:12px;line-height:1.4;color:#1e293b}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:650;padding:3px 7px;border-radius:999px;
+    background:#eef2ff;color:#4338ca;border:1px solid #c7d2fe}
+  .chip.h{background:#fffbeb;color:var(--human);border-color:#fde68a}
+  .out{margin-top:auto;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--mono);
+    background:var(--monobg);border:1px solid #a7f3d0;border-radius:7px;padding:5px 7px}
+  .out.h{color:var(--human);background:#fffbeb;border-color:#fde68a}
+  .arrow{width:30px;display:flex;align-items:center;justify-content:center;color:#94a3b8;align-self:center}
+  .start,.term2{width:110px;flex:none;align-self:center;text-align:center;font-size:12.5px;font-weight:650}
+  .start{color:var(--sub)}
+  .startbox{background:#fff;border:1px dashed var(--line);border-radius:9px;padding:10px 8px}
+  .termbox{border-radius:11px;padding:14px 8px;font-weight:750;font-size:14px}
+  .deliver .termbox{background:#f0fdfa;border:1px solid #99f6e4;color:var(--deliver)}
+  .operate .termbox{background:#eef2ff;border:1px solid #c7d2fe;color:var(--operate)}
+  .bridge{text-align:center;font-size:13px;color:var(--sub);margin:2px 0 22px;font-weight:600}
+  .bridge b{color:#334155}
+  .legend{margin-top:14px;display:flex;gap:24px;align-items:center;flex-wrap:wrap;font-size:12.5px;color:var(--sub)}
+  .legdot{display:inline-flex;align-items:center;gap:7px;font-weight:600}
+  .sw{width:13px;height:13px;border-radius:4px;display:inline-block}
+  .foot{margin-top:8px;font-size:12px;color:#94a3b8}
+</style></head><body>
+  <div class="head"><h1>Warden Flow</h1><span class="tag">an AI DevOps engineer — one structured-prompting engine, two workflows</span></div>
+  <div class="sub">Every node runs one narrowly-scoped LLM query, returns a <b>typed object</b>, and hands that structure to the next node. The only step that changes production is a human merge. Model per node is configuration, not code.</div>
+  <div class="models">Models (swappable per node): <b>Google Gemini 3.5</b> · <b>Azure OpenAI GPT‑5.6</b> · OpenAI · Anthropic — via one resolver.</div>
+
+  <!-- DELIVER LANE -->
+  <div class="lane deliver">
+    <div class="lanelabel"><span class="kd">proactive</span><span class="nm">DELIVER</span><span class="kd">ship it</span></div>
+    <div class="start"><div class="startbox">a code repo</div></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="top"></div><div class="b"><div class="nrow"><span class="num">1</span><span class="name">Assess</span></div><div class="q">Profile the repo: language, entrypoint, ports.</div><span class="chip">◆ swappable LLM</span><div class="out">RepoProfile</div></div></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="top"></div><div class="b"><div class="nrow"><span class="num">2</span><span class="name">Containerize</span></div><div class="q">Write a secure Dockerfile: pinned, multi-stage, non-root.</div><span class="chip">◆ swappable LLM</span><div class="out">Dockerfile</div></div></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="top"></div><div class="b"><div class="nrow"><span class="num">3</span><span class="name">Pipeline</span></div><div class="q">Write CI/CD: build→test→scan→push→deploy.</div><span class="chip">◆ swappable LLM</span><div class="out">Pipeline</div></div></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="top"></div><div class="b"><div class="nrow"><span class="num">4</span><span class="name">Deploy&nbsp;Plan</span></div><div class="q">Write manifests + rollout/rollback strategy.</div><span class="chip">◆ swappable LLM</span><div class="out">DeployPlan</div></div></div>
+    <div class="arrow">→</div>
+    <div class="node human"><div class="top"></div><div class="b"><div class="nrow"><span class="num">★</span><span class="name">Human&nbsp;Review</span></div><div class="q">Approve the generated artifacts as a PR.</div><span class="chip h">● human — no LLM</span><div class="out h">merge → ship</div></div></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="top"></div><div class="b"><div class="nrow"><span class="num">5</span><span class="name">Verify</span></div><div class="q">Validate every artifact against a checklist.</div><span class="chip">◆ swappable LLM</span><div class="out">VerifyReport</div></div></div>
+    <div class="arrow">→</div>
+    <div class="term2 deliver"><div class="termbox">shipped</div></div>
+  </div>
+
+  <div class="bridge">↕ the service DELIVER ships is the one OPERATE keeps healthy — <b>one lifecycle</b></div>
+
+  <!-- OPERATE LANE -->
+  <div class="lane operate">
+    <div class="lanelabel"><span class="kd">reactive</span><span class="nm">OPERATE</span><span class="kd">keep it up</span></div>
+    <div class="start"><div class="startbox">an alert</div></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="top"></div><div class="b"><div class="nrow"><span class="num">1</span><span class="name">Triage</span></div><div class="q">Real, duplicate, worth escalating?</div><span class="chip">◆ swappable LLM</span><div class="out">TriageVerdict</div></div></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="top"></div><div class="b"><div class="nrow"><span class="num">2</span><span class="name">Diagnose</span></div><div class="q">One root cause, with a cited evidence chain.</div><span class="chip">◆ swappable LLM</span><div class="out">Diagnosis</div></div></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="top"></div><div class="b"><div class="nrow"><span class="num">3</span><span class="name">Remediate</span></div><div class="q">Smallest fix, ≤12 lines → opens a PR.</div><span class="chip">◆ swappable LLM</span><div class="out">ProposedPatch</div></div></div>
+    <div class="arrow">→</div>
+    <div class="node human"><div class="top"></div><div class="b"><div class="nrow"><span class="num">★</span><span class="name">Human&nbsp;Review</span></div><div class="q">Merge or reject the fix.</div><span class="chip h">● human — no LLM</span><div class="out h">merge → apply</div></div></div>
+    <div class="arrow">→</div>
+    <div class="node"><div class="top"></div><div class="b"><div class="nrow"><span class="num">4</span><span class="name">Verify</span></div><div class="q">Did it recover? Close, or open a revert.</div><span class="chip">◆ swappable LLM</span><div class="out">verdict / revert</div></div></div>
+    <div class="arrow">→</div>
+    <div class="term2 operate"><div class="termbox">resolved</div></div>
+  </div>
+
+  <div class="legend">
+    <span class="legdot"><span class="sw" style="background:#0d9488"></span>DELIVER node</span>
+    <span class="legdot"><span class="sw" style="background:#4f46e5"></span>OPERATE node</span>
+    <span class="legdot"><span class="sw" style="background:#d97706"></span>Human-in-the-loop (required)</span>
+    <span class="legdot"><span class="sw" style="background:#047857"></span>◆ = model selection, typed output enforced per node</span>
+  </div>
+  <div class="foot">Nodes are declared as version-controlled manifests (model, tools, budget, blast radius). A reflection node critiques each run and proposes a stronger prompt. Full docs: docs/reverie/</div>
+</body></html>

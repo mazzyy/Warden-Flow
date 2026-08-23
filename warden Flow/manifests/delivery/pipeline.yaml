@@ -1,0 +1,23 @@
+apiVersion: warden.dev/v1
+kind: Agent
+metadata:
+  name: pipeline
+  description: >-
+    Generates a CI/CD pipeline (build -> test -> scan -> push -> deploy) with
+    secrets referenced not embedded and least-privilege permissions. Produces a
+    file; runs nothing.
+spec:
+  model: gemini-3.5-flash
+  tools: []
+  scopes: []
+  blastRadius:
+    namespace: demo
+    maxFilesPerPatch: 1
+    maxChangedLines: 200
+  budget:
+    maxTokensPerRun: 80000
+    maxToolCalls: 4
+  approval: required
+  circuitBreaker:
+    failuresBeforeOpen: 3
+    cooldownSeconds: 600

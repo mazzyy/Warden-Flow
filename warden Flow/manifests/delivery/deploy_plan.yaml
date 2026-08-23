@@ -1,0 +1,23 @@
+apiVersion: warden.dev/v1
+kind: Agent
+metadata:
+  name: deploy_plan
+  description: >-
+    Generates Kubernetes manifests and a rollout/rollback plan — resource limits,
+    probes, non-root securityContext, immutable image tag. Proposes; applies
+    nothing.
+spec:
+  model: gemini-3.5-flash
+  tools: []
+  scopes: []
+  blastRadius:
+    namespace: demo
+    maxFilesPerPatch: 3
+    maxChangedLines: 300
+  budget:
+    maxTokensPerRun: 80000
+    maxToolCalls: 4
+  approval: required
+  circuitBreaker:
+    failuresBeforeOpen: 3
+    cooldownSeconds: 600

@@ -17,12 +17,15 @@ from google.adk.models.base_llm import BaseLlm
 
 from warden.models import (
     AgentManifest,
+    DeployPlan,
     Diagnosis,
     Dockerfile,
+    Pipeline,
     ProposedPatch,
     Reflection,
     RepoProfile,
     TriageVerdict,
+    VerifyReport,
 )
 
 INSTRUCTIONS: dict[str, str] = {
@@ -189,6 +192,65 @@ port and dependencies — not on a generic template. If the profile is missing
 something you need, state the assumption in rationale rather than guessing
 silently. Return the complete Dockerfile text, ready to build.
 """,
+    "pipeline": """
+You write a CI/CD pipeline (a GitHub Actions workflow) that builds, checks and
+ships the container you were told about.
+
+The stages, in order, and why each matters:
+  - build   — build the image from the Dockerfile.
+  - test    — run the project's tests; fail the pipeline if they fail.
+  - scan    — scan the built image for known vulnerabilities (e.g. Trivy) and
+              fail on high/critical findings. A pipeline that pushes an unscanned
+              image is the hole this stage exists to close.
+  - push    — push to the registry ONLY on the main branch, never on a PR.
+  - deploy  — deploy only after push, and only on main.
+
+Hard rules, because they are the difference between a real pipeline and a toy:
+  - Secrets (registry credentials, tokens) are referenced as ${{ secrets.NAME }}.
+    NEVER hardcode a credential, and never `echo` a secret into the logs.
+  - Grant the workflow the least privilege it needs (an explicit minimal
+    `permissions:` block), not the default write-all token.
+  - Pin third-party actions to a version, not an unpinned branch.
+
+Return the complete workflow YAML. List the stages you actually included.
+""",
+    "deploy_plan": """
+You write the Kubernetes manifests and the rollout plan to run this container in
+production.
+
+Produce a Deployment (and a Service if it serves traffic) and enforce:
+  - resource requests AND limits on every container — an unbounded pod is how one
+    workload takes down a node.
+  - liveness and readiness probes wired to the port the service actually uses.
+  - a securityContext that runs as non-root, drops all capabilities, and sets a
+    read-only root filesystem where possible.
+  - the image referenced by digest or an immutable tag, never ':latest'.
+
+Choose a rollout strategy (e.g. RollingUpdate with a small maxSurge/maxUnavailable)
+and state, in one line, exactly how a bad rollout is reversed. Base every value on
+the RepoProfile and Dockerfile you were given; if you must assume something (a
+port, a replica count), say so in rationale rather than inventing it silently.
+Return each manifest as a path -> YAML entry.
+""",
+    "verify_artifacts": """
+You are the last gate before a human review. You are given the generated
+Dockerfile, pipeline and deployment manifests. Validate them; you build and
+deploy nothing.
+
+Check the things that actually break in production, and report each as passed or
+an issue:
+  - Dockerfile: pinned base (not ':latest'), multi-stage, runs as non-root, no
+    secret baked into a layer.
+  - Pipeline: has a scan stage, pushes only on main, references secrets rather
+    than hardcoding them, least-privilege permissions.
+  - Manifests: resource limits set, liveness/readiness probes present, non-root
+    securityContext, no ':latest' image.
+
+Set passed=false if ANY critical check fails, and list every problem you found in
+issues — specific enough that a human can fix it without rereading everything. Do
+not soften a real failure into a passing note; the whole point of this node is to
+catch what the generators missed.
+""",
 }
 
 
@@ -211,6 +273,9 @@ def build_agent(
         "reflection": Reflection,
         "assess": RepoProfile,
         "containerize": Dockerfile,
+        "pipeline": Pipeline,
+        "deploy_plan": DeployPlan,
+        "verify_artifacts": VerifyReport,
     }
 
     kwargs: dict = {

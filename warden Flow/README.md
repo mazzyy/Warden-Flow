@@ -1,26 +1,33 @@
 # Warden Flow
 
-**A multi-node LLM workflow that turns a raw production signal into a reviewed, minimal fix — and proves, with a built-in benchmark, that structured staged prompting beats a single prompt.**
+**An AI DevOps engineer built as a multi-node LLM workflow — it ships your service *and* keeps it healthy — and proves, with built-in benchmarks, that structured staged prompting beats a single prompt.**
 
-Warden Flow is a prompt-engineering system. Its subject happens to be production incidents, but the interesting part is *how it prompts*: instead of asking one model to "read these logs and fix it," it decomposes the job into small, typed, individually-scoped nodes, hands structured output from each node to the next, and gates the only production-changing step behind a human. The result is a fix a person can approve in thirty seconds — not a confident guess that quietly breaks three other things.
+Warden Flow is a prompt-engineering system with a full lifecycle, on one engine:
 
-It ships with two things most workflows don't:
+- **DELIVER** (proactive) — assess a repo → generate a Dockerfile → a CI/CD pipeline → a deployment plan → human review → verify.
+- **OPERATE** (reactive) — an alert → triage → diagnose → fix via PR → human review → verify.
 
-- **`warden bench`** — a runnable benchmark that solves the *same* incident two ways (a single naive prompt vs. the staged workflow) and **scores them from a real diff**, not a claim.
-- **A Reflection node** — a post-run LLM critic that reads the whole trace and proposes the single highest-leverage change to a node's prompt. The prompt-optimization loop, in the tool.
+The interesting part is *how it prompts*: instead of asking one model to "read this and do it," it decomposes each job into small, typed, individually-scoped nodes, hands structured output from each node to the next, and gates the only production-changing step behind a human. Models are swappable per node — Gemini by default, **Azure OpenAI GPT‑5.6**, OpenAI, or Anthropic via one resolver.
+
+It ships with things most workflows don't:
+
+- **`warden bench`** and **`warden bench-deliver`** — runnable benchmarks that solve the *same* task two ways (a single naive prompt vs. the staged workflow) and **score them from the real output**, not a claim.
+- **A Reflection node** — a post-run LLM critic that proposes the single highest-leverage change to a node's prompt. The prompt-optimization loop, in the tool.
 
 ---
 
 ## Quickstart
 
 ```bash
-./setup.sh            # venv + deps + .env, then run one incident offline (free, no key)
-./setup.sh --bench    # the workflow-vs-single-prompt benchmark + reflection (free, offline)
-./setup.sh --test     # 123-test suite + policy probe
-./setup.sh --dashboard# build + serve the live dashboard on http://localhost:8080
+./setup.sh                 # venv + deps + .env, then run one incident offline (free, no key)
+./setup.sh --deliver       # the DELIVER workflow: repo → Dockerfile → pipeline → deploy plan
+./setup.sh --bench         # incident: workflow vs single prompt + reflection (free, offline)
+./setup.sh --bench-deliver # containerize: workflow vs single prompt, scored on best practices
+./setup.sh --test          # 123-test suite + policy probe
+./setup.sh --dashboard     # build + serve the live dashboard on http://localhost:8080
 ```
 
-Offline runs use scripted models — deterministic, free, no credentials. For real Gemini, add a key to `.env` (`GOOGLE_API_KEY=...`, or set `GOOGLE_GENAI_USE_ENTERPRISE=1` for Vertex) and use `--live` / `make bench-live` / `make demo-live`.
+Offline runs use scripted models — deterministic, free, no credentials. For real models add a key to `.env` and use `--live` / `make bench-live` / `make deliver-live` / `make bench-deliver-live`. To run DELIVER on **Azure GPT‑5.6**, set `DELIVER_MODEL=azure/gpt-5.6-sol` plus `AZURE_API_KEY`, `AZURE_API_BASE`, `AZURE_API_VERSION` in `.env`. See `docs/reverie/delivery-workflow.md`.
 
 ---
 

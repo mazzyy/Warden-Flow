@@ -57,3 +57,15 @@ bench:
 
 bench-live:
 	./.venv/bin/python -m warden.bench --live
+
+deliver:
+	./.venv/bin/python -m warden.deliver
+
+deliver-live:
+	./.venv/bin/python -m warden.deliver --live
+
+bench-deliver:
+	./.venv/bin/python -m warden.bench_deliver
+
+bench-deliver-live:
+	./.venv/bin/python -m warden.bench_deliver --live

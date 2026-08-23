@@ -23,7 +23,7 @@ from warden.delivery.fixtures import delivery_scripted_models
 from warden.delivery.orchestrator import deliver
 from warden.estate.fake import FakeAdapter
 from warden.llm import load_env_file
-from warden.models import Decision, Dockerfile, RepoProfile
+from warden.models import Decision, DeployPlan, Dockerfile, Pipeline, RepoProfile, VerifyReport
 from warden.tools.github_client import GitHubClient
 from warden.tools.toolbox import ToolBox
 
@@ -109,6 +109,26 @@ async def main(live: bool, target: str) -> int:
                 print(f"\n{DIM}  ── generated Dockerfile ──{RESET}")
                 for line in d.content.splitlines():
                     print(f"  {DIM}│{RESET} {line}")
+        elif r.agent == "pipeline":
+            p = agent_run.parse(Pipeline)
+            if p:
+                print(f"  {BLUE}stages{RESET}     {' → '.join(p.stages)}")
+                print(f"  {DIM}{p.rationale}{RESET}")
+        elif r.agent == "deploy_plan":
+            dp = agent_run.parse(DeployPlan)
+            if dp:
+                print(f"  {BLUE}manifests{RESET}  {', '.join(dp.manifests) or '(none)'}")
+                print(f"  {BLUE}strategy{RESET}   {dp.strategy}")
+                print(f"  {BLUE}rollback{RESET}   {dp.rollback}")
+        elif r.agent == "verify_artifacts":
+            v = agent_run.parse(VerifyReport)
+            if v:
+                verdict = f"{GREEN}PASSED{RESET}" if v.passed else f"{RED}FAILED{RESET}"
+                print(f"  verdict    {verdict}")
+                for c in v.checks:
+                    print(f"    {GREEN}✓{RESET} {c}")
+                for issue in v.issues:
+                    print(f"    {RED}✗{RESET} {issue}")
 
         print(f"  {DIM}{r.total_tokens} tokens · ~${estimate_usd(r.model, r.prompt_tokens, r.candidates_tokens):.4f}{RESET}")
 

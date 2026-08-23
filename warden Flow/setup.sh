@@ -41,6 +41,8 @@ case "${1:-}" in
   --test)       MODE="test" ;;
   --live)       MODE="live" ;;
   --bench)      MODE="bench" ;;
+  --deliver)    MODE="deliver" ;;
+  --bench-deliver) MODE="bench_deliver" ;;
   --dashboard)  MODE="dashboard" ;;
   --setup)      MODE="setup" ;;
   --help|-h)
@@ -49,7 +51,9 @@ Warden Flow — one-command setup & run
 
   ./setup.sh             set up + run the offline demo (default, free)
   ./setup.sh --test      set up + run the test suite and policy probe
-  ./setup.sh --bench     set up + run the workflow-vs-single-prompt benchmark (free, offline)
+  ./setup.sh --bench     set up + run the incident workflow-vs-single-prompt benchmark (free)
+  ./setup.sh --deliver   set up + run the DELIVER workflow (assess -> Dockerfile -> pipeline -> plan)
+  ./setup.sh --bench-deliver  set up + run the containerize workflow-vs-single-prompt benchmark
   ./setup.sh --live      set up + run against real Gemini (needs GOOGLE_API_KEY in .env)
   ./setup.sh --dashboard set up + build and serve the dashboard on :8080
   ./setup.sh --setup     set up only, run nothing
@@ -140,6 +144,20 @@ EOF
     echo "${DIM}  offline, deterministic, free. For real Gemini: make bench-live${RESET}"
     echo
     "$PY" -m warden.bench
+    ;;
+
+  deliver)
+    say "DELIVER workflow — assess a repo, generate a Dockerfile + pipeline + deploy plan"
+    echo "${DIM}  offline, free. For real models (incl. Azure GPT-5.6): make deliver-live${RESET}"
+    echo
+    "$PY" -m warden.deliver
+    ;;
+
+  bench_deliver)
+    say "Benchmark — containerize a service, workflow vs single prompt (scored on best practices)"
+    echo "${DIM}  offline, free. For real models: make bench-deliver-live${RESET}"
+    echo
+    "$PY" -m warden.bench_deliver
     ;;
 
   live)
