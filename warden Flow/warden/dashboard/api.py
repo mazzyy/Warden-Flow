@@ -522,6 +522,7 @@ STUDIO = Path(__file__).parent / "studio.html"
 
 class DeliverBody(BaseModel):
     target: str = "examples/checkout-svc"
+    live: bool = False
 
 
 @app.post("/api/deliver/run")
@@ -530,28 +531,57 @@ async def deliver_run(body: DeliverBody) -> dict:
     from warden.control_plane.store import InMemoryStore
     from warden.delivery.fixtures import delivery_scripted_models
     from warden.delivery.orchestrator import deliver
+    from warden.delivery.source import resolve_source
     from warden.estate.fake import FakeAdapter
+    from warden.llm import load_env_file
     from warden.tools.github_client import GitHubClient
     from warden.tools.toolbox import ToolBox
 
     s = settings()
     target = body.target or "examples/checkout-svc"
+
+    # Scripted models return the sample profile regardless of input, so an offline
+    # run always analyses the bundled example — clear, free, deterministic. To
+    # analyse a REAL repo (local path or git URL) the run must be live: it clones
+    # if needed and reads the actual files with the configured model.
+    try:
+        if body.live:
+            load_env_file()  # DELIVER_MODEL + provider creds from .env
+            source_dir = resolve_source(target)  # clones a git URL to a temp dir
+            models = None
+        else:
+            if target != "examples/checkout-svc":
+                return {
+                    "error": "Offline mode only demos the bundled sample app. Tick "
+                    "“run live” to clone and analyse your own repo with a real model."
+                }
+            source_dir = "examples/checkout-svc"
+            models = delivery_scripted_models()
+    except Exception as exc:
+        return {"error": str(exc)}
+
     store = InMemoryStore()
     github = GitHubClient(
         repo_full_name=s.gitops_full_name,
         base_branch=s.gitops_base_branch,
         credential=GitHubCredential(kind="none", label="studio", enforced=False),
     )
-    toolbox = ToolBox(estate=FakeAdapter("healthy"), store=store, github=github, source_root=target)
-    fleet = load_all(Path(s.manifest_dir).parent / "delivery")
-    # Offline scripted: the Studio button is free, fast and safe to click on the
-    # judging URL. `make deliver-live` runs the same nodes on real models.
-    result = await deliver(
-        target=target, fleet=fleet, toolbox=toolbox, store=store, models=delivery_scripted_models()
+    toolbox = ToolBox(
+        estate=FakeAdapter("healthy"), store=store, github=github, source_root=source_dir
     )
+    fleet = load_all(Path(s.manifest_dir).parent / "delivery")
+
+    try:
+        result = await deliver(
+            target=target, fleet=fleet, toolbox=toolbox, store=store, models=models
+        )
+    except Exception as exc:
+        return {"error": f"{type(exc).__name__}: {exc}"[:400]}
+
     return {
         "id": result.id,
         "target": target,
+        "live": body.live,
         "totalTokens": result.total_tokens,
         "stoppedAt": result.stopped_at,
         "nodes": [

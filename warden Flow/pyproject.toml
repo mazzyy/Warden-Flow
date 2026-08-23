@@ -1,8 +1,12 @@
 [project]
 name = "warden"
 version = "0.1.0"
-description = "A governed fleet of autonomous SRE agents"
+description = "An AI DevOps engineer — a multi-node LLM workflow that ships and operates services"
 requires-python = ">=3.11"
+
+[project.scripts]
+# Run from inside any repo: `warden-deliver --live` reads the current directory.
+warden-deliver = "warden.deliver:cli"
 
 [tool.ruff]
 line-length = 100

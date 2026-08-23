@@ -60,6 +60,10 @@
   .field input{background:#0a1019;border:1px solid var(--line2);color:var(--ink);border-radius:9px;padding:10px 12px;
     font-family:var(--mono);font-size:13px}
   .field input:focus{outline:none;border-color:var(--deliver)}
+  .livetoggle{display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px;color:var(--sub);font-weight:650;
+    cursor:pointer;padding:4px 8px;border:1px solid var(--line2);border-radius:9px;white-space:nowrap}
+  .livetoggle span{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
+  .livetoggle input{margin-right:4px}
   button.run{background:var(--deliver);color:#04211d;border:none;border-radius:9px;padding:11px 20px;font-weight:750;
     font-size:14px;cursor:pointer;transition:.15s;white-space:nowrap}
   button.run:hover{filter:brightness(1.08)} button.run:disabled{opacity:.5;cursor:not-allowed}
@@ -145,12 +149,13 @@
     <div class="panel">
       <div class="runbar">
         <div class="field">
-          <label>Project directory (on the server)</label>
-          <input id="target" value="examples/checkout-svc" spellcheck="false" />
+          <label>Project directory (on the server) or GitHub URL</label>
+          <input id="target" value="examples/checkout-svc" spellcheck="false" placeholder="examples/checkout-svc  ·  or  https://github.com/you/your-repo" />
         </div>
+        <label class="livetoggle"><input type="checkbox" id="live" onchange="onLiveToggle()" /> run live<br><span>real model</span></label>
         <button class="run" id="runbtn" onclick="runDeliver()">▶ Run delivery</button>
       </div>
-      <div class="runmeta" id="runmeta">Runs the five DELIVER nodes and shows each node's real output. Offline &amp; free — no credentials needed.</div>
+      <div class="runmeta" id="runmeta">Offline (default): analyses the bundled sample app — free, instant, no credentials. Tick <b>run live</b> to clone and analyse <b>your own repo</b> (a GitHub URL works) with the model in your <code>.env</code>.</div>
       <div id="results"></div>
     </div>
   </section>
@@ -227,27 +232,41 @@ function renderNode(node, idx){
     + `<span class="chev">›</span></div><div class="rbody">${body}</div></div>`;
 }
 
+function onLiveToggle(){
+  const live=document.getElementById("live").checked;
+  document.getElementById("runmeta").innerHTML = live
+    ? 'Live: clones the repo / GitHub URL above and analyses it with the model in your <code>.env</code> (e.g. Azure GPT‑5.6). Takes ~20–40s.'
+    : 'Offline (default): analyses the bundled sample app — free, instant, no credentials. Tick <b>run live</b> to analyse your own repo.';
+}
+
 async function runDeliver(){
   const btn=document.getElementById("runbtn"), meta=document.getElementById("runmeta"), res=document.getElementById("results");
   const target=document.getElementById("target").value.trim()||"examples/checkout-svc";
-  btn.disabled=true; res.innerHTML=""; resetNodes(); meta.textContent="Running…";
-  // animate nodes stepping through while the request runs
+  const live=document.getElementById("live").checked;
+  btn.disabled=true; res.innerHTML=""; resetNodes();
+  meta.innerHTML = live ? 'Cloning &amp; running live on your repo… (~20–40s)' : 'Running…';
+  // cycle the active node continuously while the request is in flight
   let step=0; const anim=setInterval(()=>{
-    if(step>0){const p=document.getElementById("n-"+DELIVER_NODES[step-1]); if(p)p.classList.replace("active","done");}
-    if(step<DELIVER_NODES.length){const e=document.getElementById("n-"+DELIVER_NODES[step]); if(e)e.classList.add("active"); step++;}
-  },260);
+    DELIVER_NODES.forEach((n,i)=>{const e=document.getElementById("n-"+n); if(e) e.classList.toggle("active", i===step);});
+    step=(step+1)%DELIVER_NODES.length;
+  },380);
   try{
-    const r=await fetch("/api/deliver/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target})});
-    if(!r.ok) throw new Error("HTTP "+r.status);
-    const data=await r.json();
+    const r=await fetch("/api/deliver/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target,live})});
+    const data = r.ok ? await r.json() : {error:"HTTP "+r.status};
     clearInterval(anim);
+    if(data.error){
+      resetNodes();
+      meta.innerHTML=`<span style="color:var(--bad)">✗ ${esc(data.error)}</span>`;
+      return;
+    }
     DELIVER_NODES.forEach(n=>{const e=document.getElementById("n-"+n);if(e){e.classList.remove("active");e.classList.add("done");}});
-    meta.innerHTML=`<b style="color:var(--ok)">✓ ${esc(data.id)}</b> — ${data.nodes.length} nodes · ${data.totalTokens} tokens · target <b>${esc(data.target)}</b>`;
+    const modeTag = data.live ? `<b style="color:var(--deliver)">live</b>` : `offline`;
+    meta.innerHTML=`<b style="color:var(--ok)">✓ ${esc(data.id)}</b> — ${modeTag} · ${data.nodes.length} nodes · ${data.totalTokens} tokens · target <b>${esc(data.target)}</b>`;
     res.innerHTML=data.nodes.map((n,i)=>renderNode(n,i)).join("");
     const first=res.querySelector(".rcard"); if(first) first.classList.add("open");
   }catch(e){
     clearInterval(anim); resetNodes();
-    meta.innerHTML=`<span style="color:var(--bad)">Run failed: ${esc(e.message)}</span> — is the server running? Try <code>./.venv/bin/python -m warden.deliver</code> in a terminal.`;
+    meta.innerHTML=`<span style="color:var(--bad)">Run failed: ${esc(e.message)}</span> — is the server running?`;
   }finally{ btn.disabled=false; }
 }
 </script>

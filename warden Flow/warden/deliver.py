@@ -43,7 +43,7 @@ def delivery_fleet() -> dict:
     return load_all(Path(settings().manifest_dir).parent / "delivery")
 
 
-async def main(live: bool, target: str) -> int:
+async def main(live: bool, target: str, write: bool = False, apply_it: bool = False) -> int:
     warnings.filterwarnings("ignore", category=UserWarning, module="google.*")
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
     load_env_file()  # bridge .env provider creds (AZURE_*, DELIVER_MODEL) into os.environ
@@ -75,8 +75,13 @@ async def main(live: bool, target: str) -> int:
         base_branch=s.gitops_base_branch,
         credential=GitHubCredential(kind="none", label="deliver dry-run", enforced=False),
     )
+    from warden.delivery.source import is_remote, resolve_source
+
+    if is_remote(target):
+        print(f"  {DIM}cloning {target}…{RESET}")
+    source_dir = resolve_source(target)  # clones a git URL to a temp dir
     toolbox = ToolBox(
-        estate=estate, store=store, github=github, alert_context={}, source_root=target
+        estate=estate, store=store, github=github, alert_context={}, source_root=source_dir
     )
     fleet = delivery_fleet()
     models = None if live else delivery_scripted_models()
@@ -139,15 +144,64 @@ async def main(live: bool, target: str) -> int:
         print(f"  {YELLOW}stopped at {result.stopped_at}{RESET}")
     else:
         print(f"  {GREEN}Dockerfile generated and ready for human review.{RESET}")
+
+    # -- write artifacts into the repo, and (optionally) build/push/deploy ----
+    if (write or apply_it) and not result.stopped_at:
+        import os as _os
+
+        from warden.delivery.apply import run_apply, write_artifacts
+
+        df = result.containerize.parse(Dockerfile) if result.containerize else None
+        pl = result.pipeline.parse(Pipeline) if result.pipeline else None
+        dp = result.deploy_plan.parse(DeployPlan) if result.deploy_plan else None
+        if df:
+            written = write_artifacts(
+                source_dir, df.content, pl.content if pl else "", dp.manifests if dp else {}
+            )
+            rule("ARTIFACTS WRITTEN")
+            for w in written:
+                print(f"  {GREEN}✓{RESET} {w}")
+            print(f"  {DIM}into {source_dir}{RESET}")
+
+            app_name = _os.path.basename(_os.path.abspath(source_dir)) or "app"
+            outcome = run_apply(
+                source_dir=source_dir, app=app_name, tag=result.id.lower(), execute=apply_it
+            )
+            rule("APPLY — build · push · deploy" + ("  (executed)" if apply_it else "  (plan)"))
+            for cmd in outcome.get("plan", []):
+                print(f"  {DIM}$ {cmd}{RESET}")
+            for r2 in outcome.get("results", []):
+                mark = f"{GREEN}✓{RESET}" if r2["ok"] else f"{RED}✗{RESET}"
+                print(f"  {mark} {r2['step']}  {DIM}{r2['cmd']}{RESET}")
+                if not r2["ok"]:
+                    print(f"      {RED}{r2['output']}{RESET}")
+            if outcome.get("reason"):
+                print(f"  {YELLOW}{outcome['reason']}{RESET}")
+
     if not live:
         print(f"\n  {DIM}Run with --live for real models. Set DELIVER_MODEL for Azure/OpenAI/Anthropic.{RESET}")
     print()
     return 0
 
 
-if __name__ == "__main__":
+def _entry(default_target: str) -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--live", action="store_true", help="use real models instead of scripted")
-    p.add_argument("--target", default="examples/checkout-svc", help="local directory to deliver")
+    p.add_argument("--target", default=default_target,
+                   help="local directory (or git URL) to deliver; defaults to the current repo")
+    p.add_argument("--write", action="store_true",
+                   help="write the generated Dockerfile / pipeline / manifests into the repo")
+    p.add_argument("--apply", action="store_true",
+                   help="write, then build, push to ACR and deploy (needs ACR_* creds in env)")
     args = p.parse_args()
-    raise SystemExit(asyncio.run(main(args.live, args.target)))
+    raise SystemExit(asyncio.run(main(args.live, args.target, write=args.write, apply_it=args.apply)))
+
+
+def cli() -> None:
+    """Console entry (`warden-deliver`): defaults to the current directory, so a
+    developer runs it from inside their own repo — no clone, no path to type."""
+    _entry(".")
+
+
+if __name__ == "__main__":  # python -m warden.deliver: keeps the bundled sample default
+    _entry("examples/checkout-svc")
