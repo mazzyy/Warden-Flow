@@ -18,6 +18,7 @@ import uuid
 
 from warden.agents.runtime import AgentRun, run_agent
 from warden.control_plane.store import Store
+from warden.delivery.targets import deploy_hint as _deploy_hint
 from warden.llm import deliver_model_override
 from warden.models import (
     AgentManifest,
@@ -123,7 +124,7 @@ async def deliver(
         "Write a CI/CD pipeline for this containerized service.\n" + profile_block
         + f"\nBase image: {dockerfile.base_image}\n\n"
         "Stages: build, test, scan, push (main only), deploy. Reference secrets, "
-        "do not hardcode them; use least-privilege permissions.",
+        "do not hardcode them; use least-privilege permissions.\n\n" + _deploy_hint(),
     )
     pipeline = result.pipeline.parse(Pipeline)
 
@@ -243,7 +244,7 @@ async def deliver_events(
                 prompt = ("Write a CI/CD pipeline for this containerized service.\n" + pblock
                           + f"\nBase image: {df.base_image if df else 'the generated image'}\n\n"
                           "Stages: build, test, scan, push (main only), deploy. Reference secrets, "
-                          "do not hardcode; least-privilege permissions.")
+                          "do not hardcode; least-privilege permissions.\n\n" + _deploy_hint())
             elif name == "deploy_plan":
                 prompt = ("Write the Kubernetes manifests and rollout plan for this service.\n"
                           + pblock + "\nSet resource requests/limits, liveness/readiness probes, a "

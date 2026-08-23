@@ -1,138 +1,145 @@
 # Warden Flow
 
-**An AI DevOps engineer built as a multi-node LLM workflow — it ships your service *and* keeps it healthy — and proves, with built-in benchmarks, that structured staged prompting beats a single prompt.**
+**Warden Flow is an AI DevOps automation layer that turns an application repository into production-ready delivery artifacts—so developers can stay focused on building the product.**
 
-Warden Flow is a prompt-engineering system with a full lifecycle, on one engine:
+Give it a local repository or GitHub URL. Warden Flow inspects the application, creates the container, CI/CD workflow, and deployment configuration it needs, validates the result, and returns the work for review. It can open a pull request or, after explicit approval, execute the build → push → deploy plan.
 
-- **DELIVER** (proactive) — assess a repo → generate a Dockerfile → a CI/CD pipeline → a deployment plan → human review → verify.
-- **OPERATE** (reactive) — an alert → triage → diagnose → fix via PR → human review → verify.
+```text
+your application code
+        ↓
+assess → containerize → CI/CD → deployment plan → validate → human review → deploy
+```
 
-The interesting part is *how it prompts*: instead of asking one model to "read this and do it," it decomposes each job into small, typed, individually-scoped nodes, hands structured output from each node to the next, and gates the only production-changing step behind a human. Models are swappable per node — Gemini by default, **Azure OpenAI GPT‑5.6**, OpenAI, or Anthropic via one resolver.
+The workflow also includes an incident-response path for diagnosing a running workload and proposing a small GitOps fix. Both paths use the same guardrails, audit trail, and human approval boundary.
 
-It ships with things most workflows don't:
+## What developers get
 
-- **`warden bench`** and **`warden bench-deliver`** — runnable benchmarks that solve the *same* task two ways (a single naive prompt vs. the staged workflow) and **score them from the real output**, not a claim.
-- **A Reflection node** — a post-run LLM critic that proposes the single highest-leverage change to a node's prompt. The prompt-optimization loop, in the tool.
+For a supported service, Warden Flow produces:
 
----
+- A production-minded `Dockerfile` with a pinned base image, multi-stage build, non-root runtime, and no baked-in secrets.
+- A GitHub Actions workflow covering build, test, vulnerability scan, image push, and deployment.
+- Kubernetes deployment manifests with resource limits, probes, a non-root security context, immutable image references, and a rollback plan.
+- Deployment-aware CI instructions for Azure Container Apps, AKS, or Azure App Service.
+- A validation report describing what passed and what needs attention.
 
-## Quickstart
+It reads your application to understand its language, dependencies, entrypoint, and ports. It does not rewrite your product code or silently apply infrastructure changes.
+
+## Quick start
+
+From the `warden Flow` directory:
 
 ```bash
-./setup.sh                 # venv + deps + .env, then run one incident offline (free, no key)
-./setup.sh --deliver       # the DELIVER workflow: repo → Dockerfile → pipeline → deploy plan
-./setup.sh --bench         # incident: workflow vs single prompt + reflection (free, offline)
-./setup.sh --bench-deliver # containerize: workflow vs single prompt, scored on best practices
-./setup.sh --test          # 123-test suite + policy probe
-./setup.sh --dashboard     # build + serve the live dashboard on http://localhost:8080
+./setup.sh --deliver
 ```
 
-Offline runs use scripted models — deterministic, free, no credentials. For real models add a key to `.env` and use `--live` / `make bench-live` / `make deliver-live` / `make bench-deliver-live`. To run DELIVER on **Azure GPT‑5.6**, set `DELIVER_MODEL=azure/gpt-5.6-sol` plus `AZURE_API_KEY`, `AZURE_API_BASE`, `AZURE_API_VERSION` in `.env`. See `docs/reverie/delivery-workflow.md`.
+This runs the delivery workflow against the bundled sample using scripted models. It is deterministic, free, and requires no cloud account or API key.
 
----
-
-## The benchmark — why nodes beat one prompt
+To run it against your own local service after setup:
 
 ```bash
-make bench        # or ./setup.sh --bench
+.venv/bin/python -m warden.deliver --target /path/to/your-service
 ```
 
-One incident (a GitOps deploy set `PAYMENT_ENDPOINT` to `htps://…` — a one-character typo — and crashlooped checkout-svc), solved both ways, scored side by side:
+Or point it at a GitHub repository:
 
-```
-SCOREBOARD                    single prompt       warden flow
-  fixed the root cause        yes                 yes
-  lines changed               4                   1
-  within 12-line blast radius yes                 yes
-  collateral edits            3                   0
-  evidence cited              0                   3
-  confidence reported         n/a                 0.93
+```bash
+.venv/bin/python -m warden.deliver --target https://github.com/your-org/your-service
 ```
 
-Both fix the bug. But the single prompt also bumps memory (the crashloop was never OOM), "tunes" a timeout because a commit message mentioned it, and nudges a probe — three unverified changes riding into production on the back of one real fix. The workflow changes exactly one line, cites three pieces of evidence, and reports its confidence. **Every number above is computed from a real diff of each approach's output**, not asserted.
+The default mode only generates and reports artifacts. Choose the handoff that fits your team:
 
-Then the **Reflection node** reads the run and proposes one concrete prompt improvement — e.g. tightening the verifier to name the exact metric and threshold it checked before closing an incident. That's the workflow tuning its own prompts.
+```bash
+# Write generated files into a local target repository
+.venv/bin/python -m warden.deliver --target /path/to/your-service --write
 
----
+# Open a reviewable PR on a GitHub target (requires GITHUB_TOKEN)
+.venv/bin/python -m warden.deliver --target https://github.com/your-org/your-service --pr
 
-## The five nodes
-
-Each node runs one narrowly-scoped LLM query, returns a **typed object** (enforced by a Pydantic `output_schema`), and hands that structure to the next node.
-
-| # | Node | LLM query | Structured output | Model / budget |
-|---|------|-----------|-------------------|----------------|
-| 1 | **Triage** | Real, duplicate, worth escalating? | `TriageVerdict` | flash · 20k tok |
-| 2 | **Diagnosis** | One root cause, with a cited evidence chain | `Diagnosis` | flash · 120k tok |
-| 3 | **Remediation** | Smallest fix, ≤12-line diff, opens a PR only | `ProposedPatch` | flash · 120k tok |
-| 4 | **Human Review** | *(no LLM)* merge or reject the PR | human decision | — |
-| 5 | **Verification** | Did it actually recover? Close or revert | free reasoning → tool | flash · 40k tok |
-
-Plus the meta node:
-
-| ✦ | **Reflection** | Critique the run, propose a better prompt | `Reflection` | flash · 40k tok |
-
-Full per-node documentation — the exact prompts, the model/budget rationale, and the specific failure each design choice defends against — is in [`docs/reverie/node-documentation.md`](docs/reverie/node-documentation.md). The workflow diagram is [`docs/reverie/warden-flow-workflow.png`](docs/reverie/warden-flow-workflow.png).
-
----
-
-## The three prompt-engineering principles
-
-1. **One job per node.** Each prompt decides exactly one thing and is told what *not* to do ("diagnose ONE root cause"; "you can read, you cannot change anything"). A node that diagnoses *and* fixes does both worse.
-2. **Typed output, enforced.** Nodes can't answer a `root_cause` field with "probably something in the config" — they must commit to discrete, machine-checkable claims.
-3. **Structured handoffs.** A node consumes the *typed output* of the one before it, not the raw world. The diagnosis's cited evidence chain is reassembled field-by-field into the remediation prompt, so the fixer reasons over vetted facts.
-
-The single most important line in the system is in the Diagnosis prompt: *"every claim in root_cause must be traceable to something a tool actually returned; cite the specific log line, not a paraphrase."* That one instruction turns a plausible-story generator into an investigator that shows its work.
-
----
-
-## How it runs
-
-```
-signal ─→ Triage ─→ Diagnosis ─→ Remediation ─→ [Human merges PR] ─→ Verification ─→ resolved
-            (gate)   (read-only)   (PR only)                            (or revert)
+# Write, then execute the build → push → deploy plan (requires registry/deployment credentials)
+.venv/bin/python -m warden.deliver --target /path/to/your-service --apply
 ```
 
-- **Nodes are configuration, not code.** Every node is declared in a version-controlled manifest (`manifests/agents/*.yaml`) — model, tools, token budget, and blast radius. Routing Triage to a cheaper model is a one-line change.
-- **No node changes production.** A node's only write primitive is *proposing* a pull request; a human owns *applying* it. This is why the fleet needs no production credentials.
-- **A live dashboard** (`make dashboard`) shows an incident move through the nodes in real time, with an audit log, a kill switch, and the policy matrix.
+`--apply` is intentional and explicit: generation and validation never deploy by themselves.
 
-### Configuration
+## How the automation works
 
-Copy `.env.example` to `.env`. Offline runs (`demo`, `bench`, `test`) need nothing. Live runs need one model credential:
+Each stage has one job and passes typed output to the next stage rather than asking one model to make every infrastructure decision at once.
 
-- **Gemini API** (free tier, great for iterating): `GOOGLE_GENAI_USE_ENTERPRISE=0` + `GOOGLE_API_KEY=...`
-- **Vertex AI**: `GOOGLE_GENAI_USE_ENTERPRISE=1` + `gcloud auth application-default login`
+| Stage | Responsibility | Output |
+| --- | --- | --- |
+| Assess | Inspect the codebase, dependencies, entrypoint, and ports | `RepoProfile` |
+| Containerize | Create a secure, production-ready Dockerfile | `Dockerfile` |
+| Pipeline | Create build, test, scan, push, and deploy automation | `Pipeline` |
+| Deploy plan | Create manifests, rollout strategy, and rollback guidance | `DeployPlan` |
+| Validate | Check the generated artifacts before review | `VerifyReport` |
 
-To open real pull requests, point `GITHUB_OWNER` / `GITOPS_REPO` at a GitOps repo and provide a GitHub App (recommended) or a fine-grained token. Without one, remediation stays a dry-run.
+The pipeline stage adapts its deployment instructions to `DEPLOY_TARGET`:
 
----
+- `containerapp` (default) for Azure Container Apps
+- `aks` for Azure Kubernetes Service
+- `appservice` for Azure App Service containers
 
-## Commands
+Set it in `.env` before a live run, for example `DEPLOY_TARGET=aks`.
 
-| Command | What it does |
-|---------|--------------|
-| `make demo` / `./setup.sh` | One incident end to end, offline and free |
-| `make bench` / `./setup.sh --bench` | Workflow vs single prompt, scored + reflection |
-| `make demo-live` / `make bench-live` | The same, against real Gemini |
-| `make test` | 123-test suite (no cloud, no key, no spend) |
-| `make probe` | The policy matrix (agent × tool) |
-| `make dashboard` | Build + serve the live dashboard on :8080 |
-| `make check` | Lint + test + the "no agent can write to the cluster" assertion |
+## Safety and ownership
 
----
+Warden Flow automates DevOps work without taking ownership away from the engineering team.
+
+- Application developers own application code and review the generated operational artifacts.
+- Generated artifacts are validated before they are handed off.
+- A PR is the normal collaboration boundary for remote repositories.
+- Deployments require the explicit `--apply` action and valid deployment credentials.
+- The workflow is audited, policy-governed, and budget-limited.
+- Secrets are referenced through CI/CD secrets and environment configuration, not written into generated artifacts.
+
+The incident workflow follows the same principle: it can investigate, prepare a small GitOps patch, and propose it for review, but it does not receive unrestricted production write access.
+
+## Running with live models
+
+Offline commands use scripted models. For live generation, copy `.env.example` to `.env` and configure a model provider.
+
+Gemini is supported directly. Azure OpenAI, OpenAI, and Anthropic are supported through LiteLLM. For example, to use an Azure OpenAI deployment:
+
+```bash
+# .env
+DELIVER_MODEL=azure/<your-deployment-name>
+AZURE_API_KEY=...
+AZURE_API_BASE=https://<resource>.openai.azure.com/
+AZURE_API_VERSION=2024-12-01-preview
+```
+
+Then run:
+
+```bash
+make deliver-live
+```
+
+## Common commands
+
+| Command | Purpose |
+| --- | --- |
+| `./setup.sh --deliver` | Run the offline delivery workflow |
+| `make deliver-live` | Run delivery with a live model |
+| `make bench-deliver` | Compare staged delivery against a single prompt, offline |
+| `make bench-deliver-live` | Run that comparison with a live model |
+| `make demo` | Run the offline incident-response workflow |
+| `make test` | Run the test suite |
+| `make probe` | Print the policy matrix |
+| `make dashboard` | Run the workflow dashboard locally |
 
 ## Repository layout
 
-```
-warden/agents/        the nodes: definitions (prompts), orchestrator, runtime
-warden/bench.py        the workflow-vs-single-prompt benchmark + reflection
-warden/control_plane/  manifests registry, policy, budget, audit store
-warden/tools/          the read/PR tool surface, behind a policy proxy
-manifests/agents/      the four incident nodes, as versioned YAML
-manifests/reflection.yaml  the meta node
-docs/reverie/          node documentation, the benchmark comparison, the flowchart
+```text
+warden/delivery/       delivery orchestration, source handling, PR publishing, apply plan
+manifests/delivery/    versioned manifests for the delivery stages
+warden/agents/         incident-response workflow and delivery prompts
+warden/control_plane/  policy, budgets, manifests, and audit store
+warden/tools/          controlled repository, source, and infrastructure tool surface
+docs/reverie/          workflow details and benchmark material
 ```
 
----
+## Why staged automation
 
-*Built with Google Gemini 3.5 Flash, the Agent Development Kit (ADK), Pydantic structured outputs, and a GitOps pull-request workflow.*
+`warden bench-deliver` evaluates the staged workflow against a single broad prompt on the same service. It scores observable Dockerfile safeguards—such as a pinned base, multi-stage build, non-root runtime, health check, and absence of baked secrets—rather than relying on a qualitative claim.
+
+That separation is the core design choice: developers supply the application expertise; Warden Flow handles the repeatable delivery engineering around it, with reviewable output and clear operational boundaries.

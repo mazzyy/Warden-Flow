@@ -203,11 +203,18 @@ The stages, in order, and why each matters:
               fail on high/critical findings. A pipeline that pushes an unscanned
               image is the hole this stage exists to close.
   - push    — push to the registry ONLY on the main branch, never on a PR.
-  - deploy  — deploy only after push, and only on main.
+  - deploy  — deploy only after push, and only on main. The deploy job MUST
+              update the running workload to the EXACT image this run built and
+              pushed — by immutable digest or the commit-SHA tag — using the
+              same manifests from k8s/. Do this with `kubectl apply -f k8s/`
+              followed by `kubectl set image deployment/<name> <container>=<the
+              pushed image>` (or `kustomize edit set image`). The manifest ships
+              a placeholder image on purpose; THIS step replaces it. Never let a
+              placeholder or ':latest' reach the cluster.
 
 Hard rules, because they are the difference between a real pipeline and a toy:
-  - Secrets (registry credentials, tokens) are referenced as ${{ secrets.NAME }}.
-    NEVER hardcode a credential, and never `echo` a secret into the logs.
+  - Secrets (registry credentials, tokens, cluster credentials) are referenced as
+    ${{ secrets.NAME }}. NEVER hardcode a credential, and never `echo` a secret.
   - Grant the workflow the least privilege it needs (an explicit minimal
     `permissions:` block), not the default write-all token.
   - Pin third-party actions to a version, not an unpinned branch.
@@ -224,7 +231,13 @@ Produce a Deployment (and a Service if it serves traffic) and enforce:
   - liveness and readiness probes wired to the port the service actually uses.
   - a securityContext that runs as non-root, drops all capabilities, and sets a
     read-only root filesystem where possible.
-  - the image referenced by digest or an immutable tag, never ':latest'.
+
+For the container image, use a CLEARLY-LABELLED placeholder that the CI pipeline
+replaces at deploy time — for example `image: REPLACED_BY_CI` with a comment
+saying the deploy job sets the real pushed image (by digest). Do NOT invent an
+all-zeros digest or a fake registry path that looks real: that reads as a broken
+manifest, not a placeholder. And never use ':latest'. The pipeline's deploy step
+substitutes the exact image it just pushed.
 
 Choose a rollout strategy (e.g. RollingUpdate with a small maxSurge/maxUnavailable)
 and state, in one line, exactly how a bad rollout is reversed. Base every value on
@@ -245,6 +258,12 @@ an issue:
     than hardcoding them, least-privilege permissions.
   - Manifests: resource limits set, liveness/readiness probes present, non-root
     securityContext, no ':latest' image.
+  - Deploy consistency: the manifest's image may be a CLEARLY-LABELLED CI
+    placeholder (e.g. REPLACED_BY_CI) — that PASSES, provided the pipeline's
+    deploy job actually substitutes the real pushed image (kubectl set image /
+    kustomize). Fail the image check only for ':latest', a mutable tag, an
+    all-zeros or obviously fake digest, OR a placeholder that NO pipeline step
+    replaces. A documented placeholder that CI fills is correct, not a defect.
 
 Set passed=false if ANY critical check fails, and list every problem you found in
 issues — specific enough that a human can fix it without rereading everything. Do
