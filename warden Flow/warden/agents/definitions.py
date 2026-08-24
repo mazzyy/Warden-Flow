@@ -232,12 +232,17 @@ Produce a Deployment (and a Service if it serves traffic) and enforce:
   - a securityContext that runs as non-root, drops all capabilities, and sets a
     read-only root filesystem where possible.
 
-For the container image, use a CLEARLY-LABELLED placeholder that the CI pipeline
-replaces at deploy time — for example `image: REPLACED_BY_CI` with a comment
-saying the deploy job sets the real pushed image (by digest). Do NOT invent an
-all-zeros digest or a fake registry path that looks real: that reads as a broken
-manifest, not a placeholder. And never use ':latest'. The pipeline's deploy step
-substitutes the exact image it just pushed.
+For the container image, use a CLEARLY-LABELLED placeholder — for example
+`image: REPLACED_BY_CI`. Never invent an all-zeros digest, a fake-looking
+registry path, or ':latest'. You are TOLD the deploy target; the comment on the
+placeholder must match how that target ships:
+  - If the manifests are the ACTIVE deploy artifact (a Kubernetes target), the
+    comment says the pipeline's deploy step substitutes the exact pushed image
+    into THIS manifest (kubectl set image / kustomize) — because it does.
+  - If the manifests are REFERENCE-ONLY (Container Apps / App Service run the
+    container directly), the comment must say so plainly, e.g. "reference
+    manifest for portability — not applied by CI; the platform deploy sets the
+    real image". Do NOT claim CI substitutes this file when it does not.
 
 Choose a rollout strategy (e.g. RollingUpdate with a small maxSurge/maxUnavailable)
 and state, in one line, exactly how a bad rollout is reversed. Base every value on
@@ -258,12 +263,20 @@ an issue:
     than hardcoding them, least-privilege permissions.
   - Manifests: resource limits set, liveness/readiness probes present, non-root
     securityContext, no ':latest' image.
-  - Deploy consistency: the manifest's image may be a CLEARLY-LABELLED CI
-    placeholder (e.g. REPLACED_BY_CI) — that PASSES, provided the pipeline's
-    deploy job actually substitutes the real pushed image (kubectl set image /
-    kustomize). Fail the image check only for ':latest', a mutable tag, an
-    all-zeros or obviously fake digest, OR a placeholder that NO pipeline step
-    replaces. A documented placeholder that CI fills is correct, not a defect.
+  - Deploy consistency: you are TOLD the deploy target. Judge the image against
+    how that target actually deploys:
+      * Kubernetes target — the manifests are the ACTIVE artifact. A labelled
+        placeholder (e.g. REPLACED_BY_CI) PASSES only if the pipeline's deploy
+        job substitutes the real pushed image into them and applies them.
+      * Container Apps / App Service — the manifests are REFERENCE-ONLY and are
+        NOT applied by the pipeline. A labelled placeholder in them PASSES; the
+        check to make instead is that the pipeline deploys the EXACT commit-
+        pinned image to the real target (e.g. `az containerapp update --image
+        <img>:<sha>`). A reference manifest not being wired into CI is CORRECT,
+        not a defect — do not fail on it.
+    Fail the image check for ':latest', a mutable tag, an all-zeros or obviously
+    fake digest, or — on a Kubernetes target only — a placeholder that no
+    pipeline step replaces.
 
 Set passed=false if ANY critical check fails, and list every problem you found in
 issues — specific enough that a human can fix it without rereading everything. Do

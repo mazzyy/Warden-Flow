@@ -19,6 +19,7 @@ import uuid
 from warden.agents.runtime import AgentRun, run_agent
 from warden.control_plane.store import Store
 from warden.delivery.targets import deploy_hint as _deploy_hint
+from warden.delivery.targets import deploy_summary as _deploy_summary
 from warden.llm import deliver_model_override
 from warden.models import (
     AgentManifest,
@@ -135,7 +136,8 @@ async def deliver(
         + profile_block
         + f"\nContainer runs as non-root, listens on {profile.ports}. "
         "Set resource requests/limits, liveness/readiness probes, a non-root "
-        "securityContext, and an immutable image tag. State the rollback in one line.",
+        "securityContext, and an immutable image tag. State the rollback in one line.\n\n"
+        + _deploy_summary(),
     )
     deploy_plan = result.deploy_plan.parse(DeployPlan)
 
@@ -145,7 +147,8 @@ async def deliver(
     )
     result.verify = await node(
         "verify_artifacts",
-        "Validate the generated delivery artifacts. Report pass/issues.\n\n"
+        "Validate the generated delivery artifacts. Report pass/issues.\n"
+        + _deploy_summary() + "\n\n"
         f"--- Dockerfile ---\n{dockerfile.content}\n\n"
         f"--- Pipeline ---\n{pipeline.content if pipeline else '(none)'}\n\n"
         f"--- Manifests ---\n{manifests_text or '(none)'}",
@@ -249,13 +252,14 @@ async def deliver_events(
                 prompt = ("Write the Kubernetes manifests and rollout plan for this service.\n"
                           + pblock + "\nSet resource requests/limits, liveness/readiness probes, a "
                           "non-root securityContext and an immutable image tag. State the rollback "
-                          "in one line.")
+                          "in one line.\n\n" + _deploy_summary())
             else:  # verify_artifacts
                 df = parsed.get("containerize")
                 pl = parsed.get("pipeline")
                 dp = parsed.get("deploy_plan")
                 mtext = "\n".join(f"# {m.path}\n{m.content}" for m in (dp.manifests if dp else []))
-                prompt = ("Validate the generated delivery artifacts. Report pass/issues.\n\n"
+                prompt = ("Validate the generated delivery artifacts. Report pass/issues.\n"
+                          + _deploy_summary() + "\n\n"
                           f"--- Dockerfile ---\n{df.content if df else '(none)'}\n\n"
                           f"--- Pipeline ---\n{pl.content if pl else '(none)'}\n\n"
                           f"--- Manifests ---\n{mtext or '(none)'}")

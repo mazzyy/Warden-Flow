@@ -44,3 +44,41 @@ _TARGETS = {
 def deploy_hint() -> str:
     target = os.environ.get("DEPLOY_TARGET", "containerapp").strip().lower()
     return _TARGETS.get(target, _TARGETS["containerapp"])
+
+
+# Whether the Kubernetes manifests the deploy-plan node writes are the ACTIVE
+# deploy artifact (a k8s target substitutes the image into them and applies them)
+# or REFERENCE-ONLY (Container Apps / App Service run the container directly, so
+# the manifests are portability documentation the pipeline never applies).
+_MANIFEST_ROLE = {"aks": "active", "containerapp": "reference", "appservice": "reference"}
+
+
+def manifest_role() -> str:
+    target = os.environ.get("DEPLOY_TARGET", "containerapp").strip().lower()
+    return _MANIFEST_ROLE.get(target, "reference")
+
+
+def deploy_summary() -> str:
+    """One paragraph stating the deploy target and, crucially, whether the k8s
+    manifests are active or reference-only — injected into the deploy-plan and
+    verify prompts so both judge the image placeholder against how this target
+    actually ships."""
+    target = os.environ.get("DEPLOY_TARGET", "containerapp").strip().lower()
+    if target == "aks":
+        return (
+            "DEPLOY TARGET: Azure Kubernetes Service. The Kubernetes manifests are the "
+            "ACTIVE deploy artifact — the pipeline substitutes the exact pushed image into "
+            "them (kubectl set image / kustomize) and applies them."
+        )
+    if target == "appservice":
+        return (
+            "DEPLOY TARGET: Azure App Service (Web App for Containers). The pipeline sets the "
+            "container image directly with `az webapp config container set "
+            "--docker-custom-image-name <image>:<sha>`. Any Kubernetes manifests are "
+            "REFERENCE-ONLY for portability and are NOT applied by this pipeline."
+        )
+    return (
+        "DEPLOY TARGET: Azure Container Apps. The pipeline sets the container image directly "
+        "with `az containerapp update --image <image>:<sha>` (commit-pinned). Any Kubernetes "
+        "manifests are REFERENCE-ONLY for portability and are NOT applied by this pipeline."
+    )
