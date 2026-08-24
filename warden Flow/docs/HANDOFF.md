@@ -86,6 +86,7 @@ examples/checkout-svc/  bundled sample service for offline runs
   - ACR: `mazzyacr2026` (login server `mazzyacr2026.azurecr.io`)
   - Container App: `testing-python`
   - Service principal: `warden-ci` (clientId `5943100b-8226-4776-98d6-d7517cef21aa`), has **AcrPush**.
+- **Full reproducible Azure runbook (so you never rebuild it): [`docs/deploy-azure.md`](deploy-azure.md)** — resources, exact `az` commands, GitHub secret/variable mapping, and a verify step. Note it flags that the SP likely still needs a **Contributor** role on `warden-rg` for `az containerapp update` to succeed.
 - **GitHub Actions config on `testing-python`:**
   - Secret: `AZURE_CREDENTIALS` = the full service-principal JSON (`az ad sp create-for-rbac --sdk-auth` output).
   - Variables: `ACR_NAME=mazzyacr2026`, `ACR_LOGIN_SERVER=mazzyacr2026.azurecr.io`, `IMAGE_NAME=testing-python`, `CONTAINERAPP_NAME=testing-python`, `AZURE_RESOURCE_GROUP=warden-rg`.
