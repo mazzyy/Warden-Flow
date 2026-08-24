@@ -50,6 +50,14 @@ class ToolBox:
         # triaged and the agent correctly concludes it is a duplicate of
         # itself — closing the very incident it was asked to open.
         self._current_incident_id: str | None = None
+        # The last REAL pull request propose_patch opened, exactly as the GitHub
+        # client reported it. The remediator is also asked to repeat this URL in
+        # its structured output and routinely returns null instead — which left
+        # the incident with no link to its own pull request, so the dashboard's
+        # "open pull request" button never rendered. The URL is a fact this
+        # process holds the moment the API call returns; transcribing it is not
+        # the model's job.
+        self._last_pull_request: dict[str, Any] | None = None
 
     def bind_incident(self, incident_id: str) -> None:
         self._current_incident_id = incident_id
@@ -331,8 +339,19 @@ class ToolBox:
 
         return read_source_file
 
+    @property
+    def last_pull_request(self) -> dict[str, Any] | None:
+        """The last real pull request opened through propose_patch.
+
+        Straight from the GitHub client, not the model's self-report. Dry runs
+        are deliberately excluded — their placeholder URL is not a real link and
+        rendering it as one in the dashboard produces a dead button.
+        """
+        return self._last_pull_request
+
     def _propose_patch(self) -> Callable:
         gh = self._github
+        box = self
         max_lines = getattr(self, "_max_changed_lines", 0)
 
         async def propose_patch(
@@ -354,12 +373,15 @@ class ToolBox:
                 return {"error": "no GitHub client configured"}
             if len(files) != len(contents):
                 return {"error": f"files ({len(files)}) and contents ({len(contents)}) differ in length"}
-            return await gh.open_pull_request(
+            opened = await gh.open_pull_request(
                 title=title,
                 body=rationale,
                 changes=dict(zip(files, contents, strict=True)),
                 max_changed_lines=max_lines,
             )
+            if isinstance(opened, dict) and opened.get("pr_url") and not opened.get("dry_run"):
+                box._last_pull_request = opened
+            return opened
 
         return propose_patch
 

@@ -127,7 +127,14 @@ export default function App() {
 
       {view === 'ops' && (
         <>
-          <Track live={live} agentsBy={agentsBy} flash={flash} picked={picked} onPick={setPicked} />
+          <Track
+            live={live}
+            incident={live.incident}
+            agentsBy={agentsBy}
+            flash={flash}
+            picked={picked}
+            onPick={setPicked}
+          />
           <div className="split">
             <Detail agent={selected} live={live} />
             <Feed feed={live.feed} />
@@ -183,7 +190,7 @@ function Header({ live, view, setView, onKill, err }) {
 
 /* -------------------------------------------------------------------- */
 
-function Track({ live, agentsBy, flash, picked, onPick }) {
+function Track({ live, incident, agentsBy, flash, picked, onPick }) {
   return (
     <section className="track" aria-label="incident pipeline">
       <div className="track-rail" aria-hidden="true">
@@ -264,7 +271,25 @@ function Track({ live, agentsBy, flash, picked, onPick }) {
                   <div className={`chip chip-${p.state === 'active' ? 'working' : p.state}`}>
                     {p.state === 'active' ? 'in progress' : p.state}
                   </div>
-                  <div className="col-note">{p.key === 'review' ? 'no agent can do this' : p.detail}</div>
+                  {/* The pull request IS the human-review step, so the link to it
+                      belongs in this column. It used to render only down in the
+                      incident stats row, next to token counts — so the one stage
+                      that asks a person to act had nothing for them to click. */}
+                  {p.key === 'review' && incident?.pr_url ? (
+                    <a
+                      className="col-pr"
+                      href={incident.pr_url}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      review pull request ↗
+                    </a>
+                  ) : (
+                    <div className="col-note">
+                      {p.key === 'review' ? 'no agent can do this' : p.detail}
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -231,8 +231,17 @@ async def handle_incident(
     )
 
     patch = result.remediation.parse(ProposedPatch)
-    if patch and patch.pr_url:
-        incident.pr_url = patch.pr_url
+    # Trust the tool over the model. propose_patch knows the pull request URL
+    # the moment GitHub returns it; the remediator is merely asked to copy that
+    # value into its structured output, and when it forgets, the incident ends
+    # up with pr_url=None — no link in the audit trail, no "open pull request"
+    # button on the dashboard, and a human-review step with nothing to review.
+    # The model's own field stays as a fallback, not as the source of truth.
+    opened = toolbox.last_pull_request or {}
+    pr_url = opened.get("pr_url") or (patch.pr_url if patch else None)
+    if pr_url:
+        incident.pr_url = pr_url
+        log.info("%s → %s", incident.id, pr_url)
 
     incident.status = IncidentStatus.awaiting_merge
     await store.put_incident(incident)
