@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --ink:#0F1720; --body:#3A4756; --mute:#6E7C8C; --faint:#9AA7B6;
+    --page:#F4F6F8; --card:#FFFFFF; --rule:#DCE3EA; --rule2:#C3CEDA;
+    --ag:#0F766E; --agbg:#E4F3F1; --agln:#79C3BB;
+    --hu:#B45309; --hubg:#FDF2E1; --huln:#E2B570;
+    --ci:#4338CA; --cibg:#ECECFB; --ciln:#A6A8ED;
+    --sig:#52627A; --sigbg:#EAEFF4;
+    --ok:#15803D; --okbg:#E5F4EA; --okln:#8CCBA4;
+    --sans:Carlito,'Liberation Sans','DejaVu Sans',sans-serif;
+    --mono:'DejaVu Sans Mono','Liberation Mono',monospace;
+  }
+  body{width:1600px;background:var(--page);color:var(--body);font-family:var(--sans);
+    padding:28px 30px 26px;display:flex;flex-direction:column;gap:16px;-webkit-font-smoothing:antialiased;
+    overflow:hidden}
+
+  /* header */
+  header{display:flex;align-items:flex-end;justify-content:space-between;gap:24px;
+    border-bottom:2.5px solid var(--ink);padding-bottom:11px}
+  .kick{font-family:var(--mono);font-size:10px;letter-spacing:.17em;text-transform:uppercase;
+    color:var(--mute);margin-bottom:5px}
+  h1{font-size:29px;font-weight:700;color:var(--ink);letter-spacing:-.022em;line-height:1.05}
+  h1 span{color:var(--ag)}
+  .lead{font-size:13.5px;color:var(--mute);margin-top:5px}
+  .lead b{color:var(--ink)}
+  .hdr{text-align:right;flex:none}
+  .hdr .m{font-family:var(--mono);font-size:11.5px;color:var(--ink);background:var(--agbg);
+    border:1px solid var(--agln);border-radius:5px;padding:5px 10px;display:inline-block;font-weight:700}
+  .hdr .m2{font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:5px}
+
+  /* rail */
+  .rail{display:grid;grid-template-columns:repeat(8,1fr);gap:0;align-items:start}
+  .cell{position:relative;padding:0 5px}
+  .disc{width:44px;height:44px;margin:0 auto;border-radius:11px;border:2.5px solid var(--rule2);
+    background:var(--card);display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-size:17px;font-weight:700;color:var(--ink);position:relative;z-index:2}
+  .cell.ag .disc{border-color:var(--agln);background:var(--agbg);color:var(--ag)}
+  .cell.hu .disc{border-color:var(--huln);background:var(--hubg);color:var(--hu);border-radius:50%;
+    border-width:3px}
+  .cell.ci .disc{border-color:var(--ciln);background:var(--cibg);color:var(--ci)}
+  .cell.ok .disc{border-color:var(--okln);background:var(--okbg);color:var(--ok);border-radius:50%}
+  .cell.sg .disc{border-color:var(--rule2);background:var(--sigbg);color:var(--sig)}
+  .wire{position:absolute;top:21px;left:50%;width:100%;height:2.5px;background:var(--rule2);z-index:1}
+  .cell:last-child .wire{display:none}
+  .ty{position:absolute;top:2px;left:calc(50% + 30px);font-family:var(--mono);font-size:10px;
+    font-weight:700;color:var(--ag);background:var(--page);padding:0 5px;z-index:3;white-space:nowrap}
+  .nm{text-align:center;margin-top:9px;font-family:var(--mono);font-size:13px;font-weight:700;
+    color:var(--ink);letter-spacing:-.02em}
+  .role{text-align:center;font-size:11px;color:var(--mute);margin-top:2px;line-height:1.3}
+
+  /* cards */
+  .cards{display:grid;grid-template-columns:repeat(8,1fr);gap:9px;align-items:stretch}
+  .c{background:var(--card);border:2px solid var(--rule2);border-radius:9px;padding:11px 11px;
+    display:flex;flex-direction:column;gap:8px;min-width:0}
+  .c.ag{border-color:var(--agln)} .c.hu{border-color:var(--huln);border-width:2.5px}
+  .c.ci{border-color:var(--ciln)} .c.ok{border-color:var(--okln)} .c.sg{border-color:var(--rule2)}
+  .k{font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+    color:var(--faint);margin-bottom:3px}
+  .does{font-size:12px;line-height:1.42;color:var(--body)}
+  .does b{color:var(--ink)}
+  .q{font-family:var(--mono);font-size:10px;line-height:1.5;overflow-wrap:anywhere;color:var(--ink);background:#F1F5F8;
+    border-left:3px solid var(--agln);border-radius:0 4px 4px 0;padding:7px 8px}
+  .c.hu .q{border-left-color:var(--huln);background:var(--hubg)}
+  .c.ci .q{border-left-color:var(--ciln);background:var(--cibg)}
+  .c.sg .q{border-left-color:var(--rule2);background:var(--sigbg)}
+  .c.ok .q{border-left-color:var(--okln);background:var(--okbg)}
+  .ret{margin-top:auto;padding-top:8px;border-top:1px solid var(--rule)}
+  .c{min-height:0}
+  .ret .rn{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--ag)}
+  .c.hu .ret .rn{color:var(--hu)} .c.ci .ret .rn{color:var(--ci)}
+  .c.ok .ret .rn{color:var(--ok)} .c.sg .ret .rn{color:var(--sig)}
+  .ret .rf{font-size:9.5px;color:var(--mute);line-height:1.4;margin-top:2px}
+  .badge{display:inline-block;font-family:var(--mono);font-size:8.5px;font-weight:700;letter-spacing:.08em;
+    text-transform:uppercase;padding:2px 6px;border-radius:3px}
+  .badge.a{background:var(--ag);color:#fff}
+  .badge.h{background:var(--hu);color:#fff}
+  .badge.c{background:var(--ci);color:#fff}
+  .badge.o{background:var(--ok);color:#fff}
+  .badge.s{background:var(--sig);color:#fff}
+
+  /* footer */
+  footer{display:flex;align-items:center;gap:22px;border-top:1px solid var(--rule);padding-top:11px;
+    flex-wrap:wrap}
+  .lg{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--body)}
+  .lg .sw{width:20px;height:13px;border-radius:3px;border:2px solid}
+  .lg .sw.a{border-color:var(--agln);background:var(--agbg)}
+  .lg .sw.h{border-color:var(--huln);background:var(--hubg);border-radius:50%}
+  .lg .sw.c{border-color:var(--ciln);background:var(--cibg)}
+  .band{display:grid;grid-template-columns:repeat(3,1fr);gap:11px}
+  .bc{background:var(--card);border:1px solid var(--rule);border-radius:9px;padding:12px 14px}
+  .bt{font-size:12.5px;font-weight:700;color:var(--ink);margin-bottom:5px}
+  .bd{font-size:11.5px;line-height:1.5;color:var(--mute)}
+  .bd b{color:var(--body);font-weight:700}
+  .gov{margin-left:auto;font-size:11.5px;color:var(--mute)}
+  .gov b{color:var(--ink)}
+</style></head>
+<body>
+
+<header>
+  <div>
+    <div class="kick">Reverie Hacks 2026 · ML Prompt Engineering · ML Workflow</div>
+    <h1>Warden Flow — <span>DELIVER</span></h1>
+    <div class="lead">A repository goes in. Reviewed DevOps comes out. Five prompts, each returning a
+      <b>typed object</b> the next one reads — and one place a human must stand.</div>
+  </div>
+  <div class="hdr">
+    <div class="m">azure/gpt-5.6-sol</div>
+    <div class="m2">via LiteLLM · manifests default to gemini-3.5-flash</div>
+  </div>
+</header>
+
+<div class="rail">
+  <div class="cell sg"><div class="wire"></div><span class="ty">source</span>
+    <div class="disc">❯</div><div class="nm">repo</div><div class="role">your service</div></div>
+  <div class="cell ag"><div class="wire"></div><span class="ty">RepoProfile</span>
+    <div class="disc">1</div><div class="nm">assess</div><div class="role">reads the code</div></div>
+  <div class="cell ag"><div class="wire"></div><span class="ty">Dockerfile</span>
+    <div class="disc">2</div><div class="nm">containerize</div><div class="role">the image</div></div>
+  <div class="cell ag"><div class="wire"></div><span class="ty">Pipeline</span>
+    <div class="disc">3</div><div class="nm">pipeline</div><div class="role">CI/CD</div></div>
+  <div class="cell ag"><div class="wire"></div><span class="ty">DeployPlan</span>
+    <div class="disc">4</div><div class="nm">deploy_plan</div><div class="role">manifests</div></div>
+  <div class="cell ag"><div class="wire"></div><span class="ty">VerifyReport</span>
+    <div class="disc">5</div><div class="nm">verify</div><div class="role">the gate</div></div>
+  <div class="cell hu"><div class="wire"></div><span class="ty">merge</span>
+    <div class="disc">◉</div><div class="nm">human review</div><div class="role">a pull request</div></div>
+  <div class="cell ok"><div class="wire"></div>
+    <div class="disc">◍</div><div class="nm">live</div><div class="role">deployed</div></div>
+</div>
+
+<div class="cards">
+
+  <div class="c sg">
+    <div><span class="badge s">input</span></div>
+    <div><div class="k">Human input</div>
+      <div class="does">A person supplies the <b>repo URL</b> and chooses whether to open a PR.</div></div>
+    <div class="q">No model call yet — deterministic clone and file listing.</div>
+    <div class="ret"><div class="k">Hands on</div><div class="rn">source tree</div>
+      <div class="rf">the repository on disk</div></div>
+  </div>
+
+  <div class="c ag">
+    <div><span class="badge a">llm node</span></div>
+    <div><div class="k">What it does</div>
+      <div class="does">Reads the dependency manifest and entrypoint. <b>Generates nothing.</b></div></div>
+    <div class="q">"Report only what the evidence supports. If a fact is not in the files you read, say so
+      rather than filling it in."</div>
+    <div class="ret"><div class="k">Returns</div><div class="rn">RepoProfile</div>
+      <div class="rf">language · framework · entrypoint · ports · deps</div></div>
+  </div>
+
+  <div class="c ag">
+    <div><span class="badge a">llm node</span></div>
+    <div><div class="k">What it does</div>
+      <div class="does">Writes a production <b>Dockerfile</b> from the profile — not a template.</div></div>
+    <div class="q">"Pin the base to a MINOR series still supported by its distribution. Multi-stage.
+      Non-root. No secret in a layer."</div>
+    <div class="ret"><div class="k">Returns</div><div class="rn">Dockerfile</div>
+      <div class="rf">content · base_image · security_notes[]</div></div>
+  </div>
+
+  <div class="c ag">
+    <div><span class="badge a">llm node</span></div>
+    <div><div class="k">What it does</div>
+      <div class="does">Writes <b>build → test → scan → push → deploy</b> as a GitHub Actions workflow.</div></div>
+    <div class="q">"NEVER hardcode a branch name — gate on the repo's own default_branch."</div>
+    <div class="ret"><div class="k">Returns</div><div class="rn">Pipeline</div>
+      <div class="rf">workflow YAML · stages[]</div></div>
+  </div>
+
+  <div class="c ag">
+    <div><span class="badge a">llm node</span></div>
+    <div><div class="k">What it does</div>
+      <div class="does">Writes deploy <b>manifests</b> and the rollout plan. Applies nothing.</div></div>
+    <div class="q">"Requests AND limits on every container. Probes on the real port. State in one line how
+      a bad rollout is reversed."</div>
+    <div class="ret"><div class="k">Returns</div><div class="rn">DeployPlan</div>
+      <div class="rf">manifests[] · strategy · rollback</div></div>
+  </div>
+
+  <div class="c ag">
+    <div><span class="badge a">llm node</span></div>
+    <div><div class="k">What it does</div>
+      <div class="does">The <b>last gate</b> before a person sees any of it.</div></div>
+    <div class="q">"Set passed=false if ANY critical check fails. Do not soften a real failure into a
+      passing note."</div>
+    <div class="ret"><div class="k">Returns</div><div class="rn">VerifyReport</div>
+      <div class="rf">passed · checks[] · issues[] — static only</div></div>
+  </div>
+
+  <div class="c hu">
+    <div><span class="badge h">human · required</span></div>
+    <div><div class="k">Human input</div>
+      <div class="does">A person reviews the pull request and merges, or does not.
+        <b>No agent can merge.</b></div></div>
+    <div class="q">The fleet's only write primitive is open_pull_request(). It holds no registry or
+      cluster credential.</div>
+    <div class="ret"><div class="k">Returns</div><div class="rn">merge · or · close</div>
+      <div class="rf">the workflow halts until a person acts</div></div>
+  </div>
+
+  <div class="c ok">
+    <div><span class="badge o">ci · no model</span></div>
+    <div><div class="k">What it does</div>
+      <div class="does">The merge fires the pipeline <b>the agent wrote</b>.</div></div>
+    <div class="q">Scan fails the build on HIGH/CRITICAL → push to ACR → az containerapp update, pinned to
+      the exact commit.</div>
+    <div class="ret"><div class="k">Result</div><div class="rn">a running service</div>
+      <div class="rf">the commit that was reviewed, serving</div></div>
+  </div>
+
+</div>
+
+<div class="band">
+  <div class="bc">
+    <div class="bt">Why five prompts, not one</div>
+    <div class="bd">A single prompt asked to "write my DevOps" makes every decision at once, cites nothing,
+      and cannot be inspected mid-flight. Each node here has one job, a capped budget, and an output another
+      node must be able to read — so a bad answer is caught at the handoff, not in production.</div>
+  </div>
+  <div class="bc">
+    <div class="bt">The governance spine</div>
+    <div class="bd"><b>Scoped tools</b> from a YAML manifest — an ungranted call is denied and recorded.
+      <b>Budget ceiling</b> per run, checked before every dispatch. <b>Blast radius</b> caps files and lines.
+      <b>Audit trail</b> on every call, allowed or denied.</div>
+  </div>
+  <div class="bc">
+    <div class="bt">The same spine runs OPERATE</div>
+    <div class="bd">Pointed the other way: a production alert goes in — triage → diagnose → remediate →
+      human review → verify — and a GitOps fix comes out as a pull request. If the fix did not work, the
+      verifier opens a <b>revert PR</b> and the loop runs again.</div>
+  </div>
+</div>
+
+<footer>
+  <div class="lg"><span class="sw a"></span>LLM node — a prompt + an enforced output schema</div>
+  <div class="lg"><span class="sw h"></span>Human input — required; nothing proceeds without it</div>
+  <div class="lg"><span class="sw c"></span>Deterministic — no model involved</div>
+  <div class="gov">Every node is <b>policy-scoped</b>, <b>budget-capped</b> and <b>audited</b> — tools come
+    from a YAML manifest, not the code.</div>
+</footer>
+
+</body></html>

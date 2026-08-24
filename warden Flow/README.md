@@ -1,170 +1,124 @@
 # Warden Flow
 
-**Warden Flow is an AI DevOps engineer that turns an application repository into production-ready, reviewed delivery artifacts — so developers can stay focused on building the product.**
+**An AI DevOps engineer.** Point it at a repository and it writes the container, the CI/CD pipeline and the deploy manifests, validates them, and hands them back as a pull request you review.
 
-Give it a local repository or a GitHub URL. Warden Flow reads the application, generates the container, CI/CD workflow, and deployment configuration it needs, validates the result, and returns the work for human review as a pull request. With explicit approval it can also execute build → push → deploy.
+It also keeps the original **Warden**: a governed fleet of SRE agents that diagnoses a broken service and proposes a fix. Two workflows, one governance core.
 
-```text
-your application code
-        ↓
-assess → containerize → CI/CD → deploy plan → validate → human review (PR) → deploy
-```
+Every node is a separate prompt returning a **typed object** the next node reads. No single mega-prompt makes every decision, and the only thing either fleet can write is a pull request.
 
-It also keeps the original Warden capability: an **incident-response** path that diagnoses a running workload and proposes a small GitOps fix. Both paths share the same guardrails, audit trail, budget limits, and human-approval boundary.
-
-> Built for **Reverie Hacks 2026 (ML Prompt Engineering track)**. For full project status, current work, and open problems, see [`docs/HANDOFF.md`](docs/HANDOFF.md).
+> Built for **Reverie Hacks 2026 — ML Prompt Engineering**.
 
 ---
 
-## Two workflows, one governed core
+## Two workflows, one core
 
-Warden Flow is a **multi-node LLM system**: each node has one job, returns a **typed structured output**, and hands that structure to the next node — no single mega-prompt makes every infrastructure decision. Every node is policy-governed, budget-limited, and audited, and the only write primitive is a pull request a human reviews.
+| | Direction | In | Out |
+|---|---|---|---|
+| **DELIVER** | proactive — ship a service | a repository | Dockerfile + CI/CD + manifests, as a PR |
+| **OPERATE** | reactive — fix a running one | a production alert | a small GitOps patch, as a PR |
 
-| Workflow | Purpose | Nodes | Output |
-| --- | --- | --- | --- |
-| **DELIVER** | Proactively ship a service | Assess → Containerize → Pipeline → Deploy-plan → Validate | Dockerfile + CI/CD + manifests, as a PR |
-| **OPERATE** | Reactively fix a running service | Triage → Diagnose → Remediate → Verify | A small GitOps patch, as a PR |
-
----
-
-## What developers get (DELIVER)
-
-For a supported service, Warden Flow produces:
-
-- A production-minded `Dockerfile`: pinned base image, multi-stage build, non-root runtime, no baked-in secrets.
-- A GitHub Actions workflow covering build, test, vulnerability scan, image push, and deployment.
-- Kubernetes deploy manifests with resource limits, probes, a non-root security context, immutable image references, and a rollback plan.
-- Deployment-aware CI for **Azure Container Apps**, **AKS**, or **Azure App Service**.
-- A validation report describing what passed and what needs attention.
-
-It reads your application to understand its language, dependencies, entrypoint, and ports. It does not rewrite your product code or silently apply infrastructure.
-
-### How the DELIVER stages work
-
-| Stage | Responsibility | Output |
-| --- | --- | --- |
-| Assess | Inspect codebase, dependencies, entrypoint, ports | `RepoProfile` |
-| Containerize | Create a secure, production-ready Dockerfile | `Dockerfile` |
-| Pipeline | Create build, test, scan, push, deploy automation | `Pipeline` |
-| Deploy plan | Create manifests, rollout strategy, rollback guidance | `DeployPlan` |
-| Validate | Check the generated artifacts before review | `VerifyReport` |
-
-The Pipeline and Deploy-plan stages are **target-aware** via `DEPLOY_TARGET` (`containerapp` default, `aks`, `appservice`). For a non-Kubernetes target the generated k8s manifests are treated as reference-only, and Validate judges the image against how that target actually deploys.
+Both share the same spine: typed handoffs between single-purpose nodes, scoped tools, per-node budgets, an audit trail, and a human gate on the only step that writes anything.
 
 ---
 
-## Quick start
+## DELIVER — ship a service
 
-From the `warden Flow` directory:
+![DELIVER workflow](docs/reverie/warden-flow-deliver.png)
+
+Five nodes, each with one job. `assess` reads the code and reports what the service actually is. `containerize` writes a production Dockerfile from that profile. `pipeline` writes build → test → scan → push → deploy. `deploy_plan` writes the manifests and the rollback. `verify_artifacts` gates all three before a person sees them.
+
+Target-aware via `DEPLOY_TARGET`: **Azure Container Apps** (default), **AKS**, or **App Service**.
 
 ```bash
-./setup.sh --deliver
+./setup.sh --deliver                                              # offline, free, deterministic
+.venv/bin/python -m warden.deliver --target /path/to/your-service # generate + report
+.venv/bin/python -m warden.deliver --target <github-url> --pr     # open a reviewable PR
 ```
 
-Runs the delivery workflow against the bundled sample using scripted models — deterministic, free, no cloud account or API key.
+---
 
-Against your own service after setup:
+## OPERATE — fix a running service
+
+![OPERATE workflow](docs/reverie/warden-operate.png)
+
+Four nodes and a loop. `triage` decides whether the signal is real or noise. `diagnostician` reads the estate read-only and names **one** root cause with a cited evidence chain. `remediator` turns that into the smallest possible patch — capped at twelve changed lines by the write path, not by the prompt. After a human merges, `verifier` independently checks recovery, and opens a **revert PR** if the fix didn't work.
 
 ```bash
-.venv/bin/python -m warden.deliver --target /path/to/your-service                 # generate + report
-.venv/bin/python -m warden.deliver --target https://github.com/org/service --pr   # open a reviewable PR
-.venv/bin/python -m warden.deliver --target /path/to/your-service --apply         # build → push → deploy (explicit)
+make demo                                                    # offline incident workflow
+ESTATE_ADAPTER=fake .venv/bin/python -m warden.agents.demo --live --mode bad_config
 ```
 
-`--apply` is intentional and explicit: generation and validation never deploy by themselves.
+📄 **[The full ML workflow flowchart](docs/reverie/warden-flow-ml-workflow.png)** — both workflows, every prompt in full, model per node, and the revert loop.
 
-### Live models
+---
 
-Offline commands use scripted models. For live generation, copy `.env.example` to `.env` and configure a provider. Gemini/Vertex are supported directly; Azure OpenAI, OpenAI, and Anthropic through LiteLLM. The current live demo runs on **Azure GPT-5.6**:
+## Live models
+
+Offline runs use scripted models and need no key. For live generation, copy `.env.example` to `.env`:
 
 ```bash
-# .env
-DELIVER_MODEL=azure/gpt-5.6-sol
+DELIVER_MODEL=azure/gpt-5.6-sol      # Gemini and Vertex direct; Azure/OpenAI/Anthropic via LiteLLM
 AZURE_API_KEY=...
 AZURE_API_BASE=https://<resource>.openai.azure.com/
-AZURE_API_VERSION=2024-12-01-preview
 DEPLOY_TARGET=containerapp
+DEPLOY_URL=https://your-site.com     # optional — the run ends on a clickable live site
 ```
-
-Then `make deliver-live`, or run the live dashboard:
 
 ```bash
-make dashboard        # → http://localhost:8000/studio
+make dashboard        # → http://localhost:8080/studio
 ```
 
-The studio streams the workflow live — clone, then each node lighting up as it runs, with the real artifact each node produced.
+The studio streams the run live: clone, each node lighting up with the real artifact it produced, the pull request, and the deployed URL.
 
 ---
 
-## Current status (2026-08-24)
+## Status and known limitations
 
-- DELIVER runs live on Azure GPT-5.6 and opens real PRs (via a GitHub App) with a Dockerfile, CI pipeline, and manifests.
-- First end-to-end deploy in progress against `github.com/mazzyy/testing-python` → Azure Container Apps (ACR `mazzyacr2026`, Container App `testing-python`). Validate passes; the pipeline is being taken green so the deploy fires on merge to `master`.
-- OPERATE (incident response) and the offline benchmark remain part of the submission.
+DELIVER runs live on Azure GPT-5.6 and opens real pull requests through a GitHub App. OPERATE runs against a real AKS cluster or a scripted fixture estate.
 
-## Known limitations & what we're improving
+**What broke, and what we did about it.** Our first live PR looked correct, passed the Validate node, and deployed nothing — it gated deploy on `refs/heads/main` against a repo whose default branch is `master`, so the job skipped silently behind a green checkmark. Two more followed: a Trivy action tag that doesn't exist, and an installer that rate-limits on shared runners.
 
-- **The agent's generated CI isn't always runnable yet.** In the first live deploy, the generated pipeline needed human fixes (a `main`-vs-`master` deploy gate, a mistyped Trivy action tag, and a rate-limiting Trivy install step). The Validate node checks artifacts *statically*, so it can't catch "this action tag doesn't exist" or "this branch gate is wrong."
-- **Direction of fix:** (1) generator guardrails — gate on the repository's actual default branch and pin/scan via resolvable, container-based actions; (2) a reflection loop that reads the GitHub Actions run result and repairs the artifacts until the pipeline is green — so the agent proves its own CI by running it, not just validating it statically.
+- **Fixed.** `pipeline_rules()` is now the single definition of the branch gate and scanner rules. A fresh run emits `github.ref_name == github.event.repository.default_branch` and a containerized scanner, with no human edits.
+- **Fixed.** The containerize prompt now separates *pinning* from *pinning to something maintained* — the old rule produced a correctly-pinned `alpine:3.20.3`, a series that went end-of-life in April 2026 and carried 21 HIGH/CRITICAL findings.
+- **Still open.** Validate reads text, so it cannot know whether an action tag resolves or a distro is EOL. All three defects above got past it and were caught the moment the pipeline ran. That's a designed boundary: Validate is the cheap gate on every generation, the generated pipeline's own scan stage is the expensive one on merge.
+- **Next.** Grow the reflection node into a loop that reads the Actions result and repairs until the run is green.
 
-See [`docs/HANDOFF.md`](docs/HANDOFF.md) for the detailed status and the open-problem write-up.
-
----
-
-## Safety and ownership
-
-Warden Flow automates DevOps work without taking ownership from the engineering team.
-
-- Developers own application code and review the generated operational artifacts.
-- Generated artifacts are validated before handoff.
-- A PR is the normal collaboration boundary; deployments require the explicit `--apply` action and valid credentials.
-- The workflow is audited, policy-governed, and budget-limited; secrets are referenced through CI/CD secrets and environment config, never written into generated artifacts.
+The pattern under all of it: **we were asking the model for facts the system already had.** We clone the repo, so the default branch is on disk. Facts get injected as data or enforced after generation; only judgment goes to the model.
 
 ---
 
-## OPERATE — the original Warden incident workflow
+## Safety
 
-Warden began as a **governed fleet of autonomous SRE agents** for incident response, and that capability is fully part of Warden Flow. When something breaks on a running system, OPERATE:
-
-1. **Triage** — classify the alert and scope the blast radius.
-2. **Diagnose** — inspect the estate (read-only, scoped tools) and identify root cause.
-3. **Remediate** — prepare a small, reviewable **GitOps patch** (a PR), never an unrestricted production write.
-4. **Verify** — check the proposed fix against the observed failure before a human approves.
-
-It uses the **same** typed-handoff, policy, budget, audit, and human-approval spine as DELIVER — which is the point: the governance core is general. Run it offline and deterministically:
-
-```bash
-make demo
-```
+- Developers own the application code and review every generated artifact.
+- A pull request is the collaboration boundary. Deploying is a separate, explicit `--apply`.
+- Secrets are referenced through CI/CD secrets and env config, never written into generated artifacts.
+- Every tool call is policy-checked, budget-capped, and written to the audit trail.
 
 ---
 
-## Common commands
+## Commands
 
 | Command | Purpose |
-| --- | --- |
+|---|---|
 | `./setup.sh --deliver` | Offline delivery workflow |
+| `make dashboard` | Live studio → `localhost:8080/studio` |
 | `make deliver-live` | Delivery with a live model |
-| `make dashboard` | Live studio dashboard |
-| `make bench-deliver` | Staged delivery vs a single prompt, offline |
-| `make demo` | Offline incident-response (OPERATE) workflow |
+| `make demo` | Offline incident workflow |
+| `make bench-deliver` | Offline replay of the workflow-vs-single-prompt scorer |
+| `warden bench-deliver --live -n 5` | The real head-to-head: same model, 5 samples each |
 | `make test` | Test suite |
 | `make probe` | Print the policy matrix |
 
-## Repository layout
+## Layout
 
 ```text
-warden/delivery/       DELIVER orchestration, source handling, PR publishing, apply plan, deploy targets
-warden/agents/         node prompts + ADK runtime; OPERATE incident agents
+warden/delivery/       DELIVER orchestration, source, PR publishing, deploy targets
+warden/agents/         node prompts (definitions.py) + ADK runtime; OPERATE agents
 warden/control_plane/  policy, budgets, manifests, audit store
-warden/tools/          controlled repository, source, and infrastructure tool surface
-warden/dashboard/      FastAPI api + live studio UI
-manifests/agents/      OPERATE agents (triage, diagnostician, remediator, verifier)
-manifests/delivery/    DELIVER nodes (assess, containerize, pipeline, deploy_plan, verify)
-docs/reverie/          workflow details, benchmark material, submission docs
+warden/tools/          scoped repository, source and infrastructure tools
+warden/dashboard/      FastAPI API + live studio UI
+manifests/agents/      OPERATE nodes — triage, diagnostician, remediator, verifier
+manifests/delivery/    DELIVER nodes — assess, containerize, pipeline, deploy_plan, verify
+docs/reverie/          flowcharts, node documentation, benchmark material
 docs/HANDOFF.md        full status and open-problem write-up
 ```
-
-## Why staged automation
-
-`make bench-deliver` evaluates the staged workflow against a single broad prompt on the same service, scoring observable Dockerfile safeguards (pinned base, multi-stage, non-root, health check, no baked secrets) rather than a qualitative claim. That separation is the core design choice: developers supply the application expertise; Warden Flow handles the repeatable delivery engineering around it, with reviewable output and clear operational boundaries.

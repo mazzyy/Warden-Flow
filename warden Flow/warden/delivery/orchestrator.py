@@ -308,5 +308,52 @@ async def deliver_events(
             )
         yield {"stage": "pr", "status": "done", "pr": pr_info}
 
+    # -- live site ---------------------------------------------------------
+    # The workflow itself stops at the pull request — deployment happens later,
+    # when a human merges and the generated pipeline runs. But the URL that
+    # deployment lands on is known up front, so the run can end on something
+    # you can actually click instead of a green tick.
+    #
+    # Set DEPLOY_URL in .env (the Container App FQDN, your own domain, or a
+    # local dev server). Unset, this stage is skipped entirely.
+    deploy_url = os.environ.get("DEPLOY_URL", "").strip()
+    if deploy_url:
+        yield {"stage": "deployed", "status": "start",
+               "thinking": "Checking the deployment target."}
+        yield {"stage": "deployed", "status": "done",
+               **(await _probe_deploy_url(deploy_url))}
+
     yield {"stage": "complete", "status": "done", "id": delivery_id,
-           "totalTokens": total_tokens, "pr": pr_info}
+           "totalTokens": total_tokens, "pr": pr_info, "deployUrl": deploy_url or None}
+
+
+async def _probe_deploy_url(url: str) -> dict:
+    """Is anything actually serving at the deploy target right now?
+
+    Best-effort and deliberately unfailable: a target that is not up yet is the
+    NORMAL state before the first merge, not an error, so every failure mode
+    here degrades to `live: False` and the UI says "not serving yet" rather than
+    the run reporting a problem it does not have.
+    """
+    import asyncio
+
+    info: dict = {"url": url, "live": False, "detail": "not serving yet"}
+    try:
+        import httpx
+
+        async with httpx.AsyncClient(timeout=4.0, follow_redirects=True) as client:
+            resp = await client.get(url)
+        # NOT "status" — the event envelope already owns that key, and spreading
+        # this dict into it would overwrite "done" with an integer and the UI
+        # would never mark the stage complete.
+        info["httpStatus"] = resp.status_code
+        if resp.status_code < 400:
+            info["live"] = True
+            info["detail"] = f"HTTP {resp.status_code}"
+        else:
+            info["detail"] = f"HTTP {resp.status_code}"
+    except asyncio.TimeoutError:
+        info["detail"] = "timed out — not serving yet"
+    except Exception as exc:  # noqa: BLE001 - never fail the run on a probe
+        info["detail"] = f"{type(exc).__name__} — not reachable from here"
+    return info

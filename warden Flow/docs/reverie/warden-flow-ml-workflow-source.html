@@ -1,0 +1,516 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8" />
+<style>
+
+  *{margin:0;padding:0;box-sizing:border-box}
+  :root{
+    --ink:#101720; --body:#33414f; --mute:#6a7889; --faint:#94a2b3;
+    --page:#F5F7F9; --card:#FFFFFF; --rule:#DCE3EA; --rule2:#C6D0DA;
+    --agent:#0F766E; --agentbg:#E6F4F2; --agentln:#7FC6BE;
+    --human:#B45309; --humanbg:#FDF3E3; --humanln:#E3B872;
+    --ci:#4338CA;    --cibg:#EDEDFB;   --ciln:#A9AAEE;
+    --sig:#475569;   --sigbg:#EDF1F5;
+    --ok:#15803D;    --okbg:#E7F5EC;
+    --bad:#B91C1C;   --badbg:#FBEBEB;
+    --sans:Carlito,'Liberation Sans','DejaVu Sans',sans-serif;
+    --mono:'DejaVu Sans Mono','Liberation Mono',monospace;
+  }
+  body{background:var(--page);color:var(--body);font-family:var(--sans);width:1840px;
+    padding:44px 40px 40px;-webkit-font-smoothing:antialiased}
+
+  /* ---------- masthead ---------- */
+  .mast{border-bottom:3px solid var(--ink);padding-bottom:16px;margin-bottom:8px}
+  .mast .kick{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--mute);margin-bottom:8px}
+  .mast h1{font-size:40px;font-weight:700;color:var(--ink);letter-spacing:-.02em;line-height:1.05}
+  .mast .sub{font-size:16px;color:var(--mute);margin-top:8px;max-width:105ch}
+  .mast .sub b{color:var(--ink)}
+
+  .legend{display:flex;gap:26px;flex-wrap:wrap;padding:14px 0 22px;border-bottom:1px solid var(--rule);
+    margin-bottom:26px;align-items:center}
+  .lg{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--body)}
+  .lg .sw{width:26px;height:16px;border-radius:4px;border:2px solid}
+  .lg .sw.a{border-color:var(--agentln);background:var(--agentbg)}
+  .lg .sw.h{border-color:var(--humanln);background:var(--humanbg);border-radius:50%}
+  .lg .sw.c{border-color:var(--ciln);background:var(--cibg)}
+  .lg .sw.s{border-color:var(--rule2);background:var(--sigbg)}
+  .lg .arrowk{font-family:var(--mono);font-size:11px;color:var(--agent);
+    border:1px dashed var(--agentln);border-radius:3px;padding:1px 6px;background:var(--agentbg)}
+
+  /* ---------- section ---------- */
+  .sec{margin-bottom:34px}
+  .sechd{display:flex;align-items:baseline;gap:14px;margin-bottom:4px}
+  .sechd .tag{font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.12em;
+    text-transform:uppercase;color:#fff;background:var(--ink);padding:4px 10px;border-radius:4px}
+  .sechd h2{font-size:23px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+  .sechd .dir{font-size:14px;color:var(--mute)}
+  .secnote{font-size:14px;color:var(--mute);margin-bottom:18px;max-width:120ch}
+
+  /* ---------- flow: vertical bands ---------- */
+  .row{display:flex;flex-direction:column;gap:0}
+  .arrow{display:flex;align-items:center;gap:10px;padding:7px 0 7px 148px}
+  .arrow .ln{width:2px;height:22px;background:var(--rule2);position:relative;margin-left:22px}
+  .arrow .ln::after{content:"";position:absolute;left:-4px;bottom:-1px;border-top:8px solid var(--rule2);
+    border-left:5px solid transparent;border-right:5px solid transparent}
+  .arrow .ty{font-family:var(--mono);font-size:12px;color:var(--agent);background:var(--agentbg);
+    border:1px dashed var(--agentln);border-radius:4px;padding:3px 9px;font-weight:700;white-space:nowrap}
+  .arrow .hint{font-size:12px;color:var(--faint)}
+
+  .node{display:grid;grid-template-columns:300px 1fr 420px;background:var(--card);
+    border:2px solid var(--rule2);border-radius:10px;overflow:hidden}
+  .node.agent{border-color:var(--agentln)}
+  .node.human{border-color:var(--humanln);border-width:3px}
+  .node.ci{border-color:var(--ciln)}
+  .node.sig{border-color:var(--rule2);background:var(--sigbg)}
+
+  .nhd{padding:14px 16px;display:flex;flex-direction:column;gap:9px;border-right:1px solid var(--rule)}
+  .node.agent .nhd{background:var(--agentbg)}
+  .node.human .nhd{background:var(--humanbg)}
+  .node.ci .nhd{background:var(--cibg)}
+  .nhd .top{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .nhd .ix{width:26px;height:26px;border-radius:6px;background:var(--ink);color:#fff;font-family:var(--mono);
+    font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;flex:none}
+  .nhd .nm{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+  .nhd .kd{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;padding:3px 7px;border-radius:3px;white-space:nowrap}
+  .node.agent .kd{background:var(--agent);color:#fff}
+  .node.human .kd{background:var(--human);color:#fff}
+  .node.ci .kd{background:var(--ci);color:#fff}
+  .node.sig .kd{background:var(--sig);color:#fff}
+
+  .nbd{padding:14px 18px;display:flex;flex-direction:column;gap:11px;min-width:0}
+  .nrt{padding:14px 16px;border-left:1px solid var(--rule);display:flex;flex-direction:column;gap:11px;
+    background:#FBFCFD}
+
+  .f .k{font-family:var(--mono);font-size:9.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;
+    color:var(--faint);margin-bottom:4px}
+  .f .v{font-size:13.5px;color:var(--body);line-height:1.5}
+  .f .v b{color:var(--ink)}
+  .f .v.m{font-family:var(--mono);font-size:13px;color:var(--ink);font-weight:700}
+  .q{font-family:var(--mono);font-size:12.5px;line-height:1.62;color:var(--ink);background:#F2F5F8;
+    border-left:4px solid var(--agentln);border-radius:0 5px 5px 0;padding:11px 14px}
+  .node.human .q{border-left-color:var(--humanln)}
+  .node.ci .q{border-left-color:var(--ciln)}
+  .node.sig .q{border-left-color:var(--rule2)}
+  .tools{display:flex;flex-wrap:wrap;gap:5px}
+  .tl{font-family:var(--mono);font-size:11.5px;background:#EEF2F6;border:1px solid var(--rule);
+    border-radius:4px;padding:2.5px 7px;color:var(--body)}
+  .tl.w{background:var(--badbg);border-color:#E9B7B7;color:var(--bad);font-weight:700}
+  .ret{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--agent)}
+  .node.human .ret{color:var(--human)} .node.ci .ret{color:var(--ci)} .node.sig .ret{color:var(--sig)}
+  .retf{font-size:12.5px;color:var(--mute);line-height:1.55;margin-top:4px}
+  .retf b{color:var(--ink)}
+  .nft{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-family:var(--mono);font-size:11.5px;
+    color:var(--mute);margin-top:auto;padding-top:4px}
+  .nft b{color:var(--ink);font-weight:700}
+  .nft .ap{padding:2px 8px;border-radius:3px;font-weight:700}
+  .ap.auto{background:#EEF2F6;color:var(--mute)}
+  .ap.req{background:var(--humanbg);color:var(--human)}
+
+  /* ---------- revert loop ---------- */
+  .loopwrap{position:relative;margin-top:6px}
+  .loop{margin-top:14px;border:2px dashed var(--bad);border-radius:10px;background:var(--badbg);
+    padding:14px 16px;display:flex;align-items:center;gap:16px}
+  .loop .lb{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--bad);white-space:nowrap;border-right:1px solid #E9B7B7;
+    padding-right:16px}
+  .loop .tx{font-size:13.5px;color:#7F2222;line-height:1.5}
+  .loop .tx b{color:var(--bad)}
+  .loop .tx code{font-family:var(--mono);font-size:12px;background:#fff;border:1px solid #E9B7B7;
+    border-radius:3px;padding:1px 5px}
+  .branch{display:flex;gap:12px;margin-top:12px}
+  .br{flex:1;border:2px solid;border-radius:9px;padding:11px 14px;background:#fff}
+  .br.good{border-color:#9BD4AF;background:var(--okbg)}
+  .br.bad{border-color:#E9B7B7;background:var(--badbg)}
+  .br .h{font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+    margin-bottom:5px}
+  .br.good .h{color:var(--ok)} .br.bad .h{color:var(--bad)}
+  .br .d{font-size:13px;line-height:1.5;color:var(--body)}
+  .br .d code{font-family:var(--mono);font-size:11.5px;background:#fff;border:1px solid var(--rule);
+    border-radius:3px;padding:1px 5px}
+
+  /* ---------- spine ---------- */
+  .spine{border:2px solid var(--ink);border-radius:10px;background:#fff;padding:0;overflow:hidden}
+  .spine .sh{background:var(--ink);color:#fff;padding:9px 16px;font-family:var(--mono);font-size:12px;
+    font-weight:700;letter-spacing:.11em;text-transform:uppercase;display:flex;justify-content:space-between}
+  .spine .sh span:last-child{font-weight:400;letter-spacing:.02em;text-transform:none;opacity:.75}
+  .sg{display:grid;grid-template-columns:repeat(5,1fr)}
+  .sg > div{padding:13px 16px;border-right:1px solid var(--rule)}
+  .sg > div:last-child{border-right:none}
+  .sg .t{font-size:13.5px;font-weight:700;color:var(--ink);margin-bottom:4px}
+  .sg .b{font-size:12px;color:var(--mute);line-height:1.5}
+  .foot{margin-top:22px;padding-top:14px;border-top:1px solid var(--rule);display:flex;
+    justify-content:space-between;font-family:var(--mono);font-size:11.5px;color:var(--faint)}
+
+  /* ---------- the revert loop, drawn ---------- */
+  .looped{position:relative;padding-left:52px}
+  .retpath{position:absolute;left:14px;width:26px;border:3px dashed var(--bad);border-right:none;
+    border-radius:10px 0 0 10px;pointer-events:none}
+  .retpath::before{content:"";position:absolute;right:-9px;top:-3px;
+    border-left:11px solid var(--bad);border-top:7px solid transparent;border-bottom:7px solid transparent}
+  .retpath .lbl{position:absolute;left:-6px;top:50%;transform:translate(-50%,-50%) rotate(180deg);
+    writing-mode:vertical-rl;font-family:var(--mono);font-size:11px;font-weight:700;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--bad);background:var(--page);padding:8px 2px;white-space:nowrap}
+
+</style></head>
+<body>
+
+<div class="mast">
+  <div class="kick">Reverie Hacks 2026 · ML Prompt Engineering · ML Workflow</div>
+  <h1>Warden Flow — two governed LLM workflows, one spine</h1>
+  <div class="sub">Every node is a <b>separate prompt</b> that returns a <b>typed object</b> — a Pydantic
+    schema the runtime enforces — and hands that structure to the next node. No single prompt makes every
+    decision. The fleet's only write primitive is a <b>pull request</b>; a human decides whether it lands.</div>
+</div>
+
+<div class="legend">
+  <div class="lg"><span class="sw a"></span>LLM node — a prompt + an enforced output schema</div>
+  <div class="lg"><span class="sw h"></span>Human input — required; nothing proceeds without it</div>
+  <div class="lg"><span class="sw c"></span>CI / deterministic — no model involved</div>
+  <div class="lg"><span class="sw s"></span>Signal / source — the trigger</div>
+  <div class="lg"><span class="arrowk">TypedObject</span>the structure passed between nodes</div>
+</div>
+
+<div class="sec">
+  <div class="sechd"><span class="tag">Workflow A</span><h2>DELIVER</h2>
+    <span class="dir">proactive · a repository goes in, reviewed delivery artifacts come out</span></div>
+  <div class="secnote">Runtime model for all five LLM nodes: <b>azure/gpt-5.6-sol</b> (Azure OpenAI GPT-5.6,
+    routed through LiteLLM), set by <code>DELIVER_MODEL</code>. Each manifest declares
+    <b>gemini-3.5-flash</b> as its default, so the identical workflow runs on either provider without a code
+    change — the model is configuration, the structure is the design.</div>
+  <div class="row">
+  <div class="node sig">
+    <div class="nhd">
+      <div class="top"><div class="ix">·</div><div class="nm">repository</div></div>
+      <div><span class="kd">source</span></div>
+      
+      <div class="f"><div class="k">Human input</div><div class="v">A person supplies the target and chooses whether to open a PR.</div></div>
+      <div class="nft"><span class="ap auto">no model</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">What happens here</div><div class="q">Cloned to a working directory; the file list is read. No model call happens yet — the workflow is deterministic until node 1.</div></div>
+      
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">source tree</div><div class="retf">the repository on disk, ready to read</div></div>
+    </div>
+  </div>
+  <div class="arrow"><div class="ty">source</div><div class="ln"></div></div>
+  <div class="node agent">
+    <div class="nhd">
+      <div class="top"><div class="ix">1</div><div class="nm">assess</div></div>
+      <div><span class="kd">llm node</span></div>
+      <div class="f"><div class="k">Model</div><div class="v m">azure/gpt-5.6-sol</div></div>
+      
+      <div class="nft"><span><b>60k</b> tok · <b>15</b> calls</span><span class="ap auto">auto</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">Query to the LLM</div><div class="q">"Assess the service at <b>{target}</b> so it can be containerized and deployed. Call list_source_files first, then read_source_file on the files that actually tell you how the service runs. Report only what the evidence supports — if a fact is not in the files you read, say so in notes rather than filling it in. A containerizer that trusts a guessed port will build an image that cannot start."</div></div>
+      <div class="f"><div class="k">Tools granted</div><div class="tools"><span class="tl">list_source_files</span><span class="tl">read_source_file</span></div></div>
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">RepoProfile</div><div class="retf">language · framework · entrypoint · ports · build_system · dependencies[] · notes</div></div>
+    </div>
+  </div>
+  <div class="arrow"><div class="ty">RepoProfile</div><div class="ln"></div></div>
+  <div class="node agent">
+    <div class="nhd">
+      <div class="top"><div class="ix">2</div><div class="nm">containerize</div></div>
+      <div><span class="kd">llm node</span></div>
+      <div class="f"><div class="k">Model</div><div class="v m">azure/gpt-5.6-sol</div></div>
+      
+      <div class="nft"><span><b>80k</b> tok · <b>10</b> calls</span><span class="ap req">review required</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">Query to the LLM</div><div class="q">"Write a PRODUCTION Dockerfile. Pin the base to a <b>MINOR series still supported by its distribution</b> — never ':latest', never a frozen patch tag, which freezes the image at that day's CVE set. Multi-stage build. Non-root final stage. No secret baked into a layer. Base it on the RepoProfile you were given, not a generic template."</div></div>
+      <div class="f"><div class="k">Tools granted</div><div class="tools"><span class="tl">read_source_file</span></div></div>
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">Dockerfile</div><div class="retf">content · base_image · multistage · runs_as_nonroot · security_notes[]</div></div>
+    </div>
+  </div>
+  <div class="arrow"><div class="ty">Dockerfile</div><div class="ln"></div></div>
+  <div class="node agent">
+    <div class="nhd">
+      <div class="top"><div class="ix">3</div><div class="nm">pipeline</div></div>
+      <div><span class="kd">llm node</span></div>
+      <div class="f"><div class="k">Model</div><div class="v m">azure/gpt-5.6-sol</div></div>
+      
+      <div class="nft"><span><b>80k</b> tok · <b>4</b> calls</span><span class="ap req">review required</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">Query to the LLM</div><div class="q">"Write a CI/CD workflow: build → test → <b>scan</b> → push → deploy. <b>NEVER hardcode a branch name</b> — you do not know this repository's default branch; gate on <b>github.event.repository.default_branch</b>. Pin third-party actions to tags that actually exist, or run the tool from its container image. Reference secrets, never embed them. Every one of these is a thing that cannot be caught by reading the YAML — only by running it."</div></div>
+      <div class="f"><div class="k">Tools granted</div><div class="tools"><span class="tl">none — generates only</span></div></div>
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">Pipeline</div><div class="retf">content (GitHub Actions YAML) · stages[]</div></div>
+    </div>
+  </div>
+  <div class="arrow"><div class="ty">Pipeline</div><div class="ln"></div></div>
+  <div class="node agent">
+    <div class="nhd">
+      <div class="top"><div class="ix">4</div><div class="nm">deploy_plan</div></div>
+      <div><span class="kd">llm node</span></div>
+      <div class="f"><div class="k">Model</div><div class="v m">azure/gpt-5.6-sol</div></div>
+      
+      <div class="nft"><span><b>80k</b> tok · <b>4</b> calls</span><span class="ap req">review required</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">Query to the LLM</div><div class="q">"Write the deploy manifests and rollout plan. Resource requests AND limits on every container — an unbounded pod is how one workload takes down a node. Liveness and readiness probes on the port the service actually uses. Non-root securityContext. Use a clearly labelled image placeholder. State in one line exactly how a bad rollout is reversed."</div></div>
+      <div class="f"><div class="k">Tools granted</div><div class="tools"><span class="tl">none — generates only</span></div></div>
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">DeployPlan</div><div class="retf">manifests[path → yaml] · strategy · rollback</div></div>
+    </div>
+  </div>
+  <div class="arrow"><div class="ty">DeployPlan</div><div class="ln"></div></div>
+  <div class="node agent">
+    <div class="nhd">
+      <div class="top"><div class="ix">5</div><div class="nm">verify_artifacts</div></div>
+      <div><span class="kd">llm node</span></div>
+      <div class="f"><div class="k">Model</div><div class="v m">azure/gpt-5.6-sol</div></div>
+      
+      <div class="nft"><span><b>40k</b> tok · <b>0</b> calls</span><span class="ap auto">auto</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">Query to the LLM</div><div class="q">"You are the last gate before a human review. Validate the generated Dockerfile, pipeline and manifests. Set <b>passed=false if ANY critical check fails</b>, and list every problem specifically enough that a human can fix it without rereading everything. Do not soften a real failure into a passing note — the point of this node is to catch what the generators missed."</div></div>
+      <div class="f"><div class="k">Tools granted</div><div class="tools"><span class="tl">none — reads the typed handoff only</span></div></div>
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">VerifyReport</div><div class="retf">passed · checks[] · issues[]<br/><b>Static checks only.</b> It reads text; it runs nothing. What it cannot see is caught by the scan stage in node 7.</div></div>
+    </div>
+  </div>
+  <div class="arrow"><div class="ty">VerifyReport</div><div class="ln"></div></div>
+  <div class="node human">
+    <div class="nhd">
+      <div class="top"><div class="ix">6</div><div class="nm">human review</div></div>
+      <div><span class="kd">human input</span></div>
+      
+      <div class="f"><div class="k">Human input — required</div><div class="v">A person reads the pull request and decides. <b>No agent can merge it.</b></div></div>
+      <div class="nft"><span>no model</span><span class="ap req">blocking</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">What the fleet did, and could not do</div><div class="q">The agent's single write primitive is <b>open_pull_request()</b> on a new branch, carrying the Dockerfile, the workflow and the manifests. It cannot push to a default branch, cannot merge, and holds no registry or cluster credential that would let it deploy anything itself. The workflow halts here until a person acts.</div></div>
+      
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">merge · or · close</div><div class="retf">a human decision — the only way a generated artifact reaches the repository</div></div>
+    </div>
+  </div>
+  <div class="arrow"><div class="ty">merge</div><div class="ln"></div></div>
+  <div class="node ci">
+    <div class="nhd">
+      <div class="top"><div class="ix">7</div><div class="nm">CI deploy</div></div>
+      <div><span class="kd">ci · no model</span></div>
+      
+      <div class="f"><div class="k">Trigger</div><div class="v">The merge fires the pipeline the agent wrote, on the repository's own default branch.</div></div>
+      <div class="nft"><span>deterministic</span><span class="ap auto">no model</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">What happens here</div><div class="q">build → test → <b>scan</b> (fails the build on HIGH/CRITICAL vulnerabilities) → push to Azure Container Registry → <b>az containerapp update</b> pinned to the exact commit image. This is where a defect the static gate could not see gets caught — running the pipeline is the only thing that proves the pipeline.</div></div>
+      
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">a running service</div><div class="retf">the deployed URL, serving the exact commit that was reviewed</div></div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<div class="sec">
+  <div class="sechd"><span class="tag">Workflow B</span><h2>OPERATE</h2>
+    <span class="dir">reactive · a production alert goes in, a reviewed GitOps fix comes out</span></div>
+  <div class="secnote">Runtime model for all four LLM nodes: <b>gemini-3.5-flash</b>. Same typed-handoff,
+    budget, policy and audit spine as DELIVER — which is the point: the governance core is
+    workflow-agnostic. The estate is read through scoped read-only credentials; no node can write to the
+    cluster.</div>
+  <div class="looped" id="looped">
+  <div class="retpath" id="retpath"><span class="lbl">revert PR re-enters review</span></div>
+  <div class="row">
+  <div class="node sig">
+    <div class="nhd">
+      <div class="top"><div class="ix">·</div><div class="nm">alert</div></div>
+      <div><span class="kd">signal</span></div>
+      
+      <div class="f"><div class="k">Trigger</div><div class="v">Cloud Monitoring webhook, or an observed estate state.</div></div>
+      <div class="nft"><span>deterministic</span><span class="ap auto">no model</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">What happens here</div><div class="q">An Incident record is opened and persisted <b>before any model runs</b>, so recall cannot hand triage its own incident back and have it close itself as a duplicate.</div></div>
+      
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">Incident</div><div class="retf">id · source · signature · title · status=open</div></div>
+    </div>
+  </div>
+  <div class="arrow"><div class="ty">alert</div><div class="ln"></div></div>
+  <div class="node agent">
+    <div class="nhd">
+      <div class="top"><div class="ix">1</div><div class="nm">triage</div></div>
+      <div><span class="kd">llm node</span></div>
+      <div class="f"><div class="k">Model</div><div class="v m">gemini-3.5-flash</div></div>
+      
+      <div class="nft"><span><b>20k</b> tok · <b>6</b> calls</span><span class="ap auto">auto</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">Query to the LLM</div><div class="q">"Decide three things and nothing else: how severe this is, whether it duplicates an incident already open, and whether it is worth waking the rest of the fleet. <b>Be willing to close things</b> — most alerts in a real estate are noise. But understand what escalation costs here: it wakes three agents for a few cents, not a person at 3am. Escalating something harmless is cheap; failing to escalate something real means nobody looks at all."</div></div>
+      <div class="f"><div class="k">Tools granted</div><div class="tools"><span class="tl">get_alert_context</span><span class="tl">recall_similar_incidents</span></div></div>
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">TriageVerdict</div><div class="retf">severity · escalate · duplicate_of · reasoning<br/><b>escalate=false → the workflow stops here</b> and the incident closes as noise. No further model calls.</div></div>
+    </div>
+  </div>
+  <div class="arrow"><div class="ty">TriageVerdict</div><div class="ln"></div><div class=hint>only when escalate = true</div></div>
+  <div class="node agent">
+    <div class="nhd">
+      <div class="top"><div class="ix">2</div><div class="nm">diagnostician</div></div>
+      <div><span class="kd">llm node</span></div>
+      <div class="f"><div class="k">Model</div><div class="v m">gemini-3.5-flash</div></div>
+      
+      <div class="nft"><span><b>120k</b> tok · <b>25</b> calls</span><span class="ap auto">auto</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">Query to the LLM</div><div class="q">"You can read; you cannot change anything, anywhere. <b>Every claim in root_cause must be traceable to something a tool actually returned</b> — cite the specific log line, not a paraphrase. Correlate the failure to the change that caused it. <b>Diagnose ONE root cause.</b> A workload that looks odd but is not implicated by the evidence is not part of this incident."</div></div>
+      <div class="f"><div class="k">Tools granted</div><div class="tools"><span class="tl">describe_workload</span><span class="tl">get_workload_logs</span><span class="tl">recent_deploys</span><span class="tl">query_metrics</span></div></div>
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">Diagnosis</div><div class="retf">hypothesis · root_cause · evidence[source, detail] · suggested_fix · confidence<br/>Read-only scope: <b>cluster:demo:read</b>. maxChangedLines = 0.</div></div>
+    </div>
+  </div>
+  <div class="arrow"><div class="ty">Diagnosis</div><div class="ln"></div></div>
+  <div class="node agent">
+    <div class="nhd">
+      <div class="top"><div class="ix">3</div><div class="nm">remediator</div></div>
+      <div><span class="kd">llm node</span></div>
+      <div class="f"><div class="k">Model</div><div class="v m">gemini-3.5-flash</div></div>
+      
+      <div class="nft"><span><b>120k</b> tok · <b>20</b> calls</span><span class="ap req">review required</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">Query to the LLM</div><div class="q">"Turn the diagnosis into the smallest change that fixes it. You cannot reach the cluster. Your only action is <b>propose_patch</b>, which opens a pull request a human reviews. Read the real file first — never reconstruct one from memory, you will silently drop what you did not think to include. <b>Patch ONLY what the diagnosis names as the root cause.</b>"</div></div>
+      <div class="f"><div class="k">Tools granted</div><div class="tools"><span class="tl">list_repo_files</span><span class="tl">read_repo_file</span><span class="tl w">propose_patch → PR only</span></div></div>
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">ProposedPatch</div><div class="retf">files_changed[] · rationale (becomes the PR body) · pr_url<br/><b>Blast radius: 12 changed lines maximum</b> — the write path refuses more, so an over-eager fix cannot be produced.</div></div>
+    </div>
+  </div>
+  <div class="arrow"><div class="ty">ProposedPatch</div><div class="ln"></div></div>
+  <div class="node human" id="opHuman">
+    <div class="nhd">
+      <div class="top"><div class="ix">4</div><div class="nm">human review</div></div>
+      <div><span class="kd">human input</span></div>
+      
+      <div class="f"><div class="k">Human input — required</div><div class="v">A person reads the diff and the evidence chain, then merges or closes.</div></div>
+      <div class="nft"><span>no model</span><span class="ap req">blocking</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">Why the workflow halts here</div><div class="q">The incident sits in <b>awaiting_merge</b> until a person acts. Running the verifier before the merge would have it check a service nobody has fixed yet, and open a revert for a change that was never applied. <b>The gap between propose and verify is a human, by design.</b> On merge, GitOps sync applies the manifest to the cluster.</div></div>
+      
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">merge · or · close</div><div class="retf">the merged change is applied to the cluster by GitOps sync</div></div>
+    </div>
+  </div>
+  <div class="arrow"><div class="ty">merged + synced</div><div class="ln"></div></div>
+  <div class="node agent">
+    <div class="nhd">
+      <div class="top"><div class="ix">5</div><div class="nm">verifier</div></div>
+      <div><span class="kd">llm node</span></div>
+      <div class="f"><div class="k">Model</div><div class="v m">gemini-3.5-flash</div></div>
+      
+      <div class="nft"><span><b>40k</b> tok · <b>15</b> calls</span><span class="ap auto">auto</span></div>
+    </div>
+    <div class="nbd">
+      <div class="f"><div class="k">Query to the LLM</div><div class="q">"The fix has merged and synced. Decide whether it worked. Compare against what the incident described — <b>a service that is healthy for a different reason has not been fixed</b>. If it recovered, close the incident. If it did not, call <b>request_revert</b> with a clear reason. <b>Do not wait and hope.</b> Rolling back a change that did not help is cheap; leaving a broken service in production while you deliberate is not."</div></div>
+      <div class="f"><div class="k">Tools granted</div><div class="tools"><span class="tl">get_workload_status</span><span class="tl">query_metrics</span><span class="tl w">request_revert → PR only</span></div></div>
+    </div>
+    <div class="nrt">
+      <div class="f"><div class="k">Action / returns</div>
+        <div class="ret">recovered? → branches</div><div class="retf">the only node that can send the workflow backwards — see the two outcomes below</div></div>
+    </div>
+  </div>
+  </div>
+
+  <div class="branch">
+    <div class="br good">
+      <div class="h">↳ outcome A · recovered → close</div>
+      <div class="d">Status and metrics match what the incident described — <code>replicas_ready 3/3</code>,
+        <code>error_rate &lt; 0.05</code>. The verifier closes the incident: status <code>resolved</code>,
+        <code>closed_at</code> stamped, the full trace retained in the audit store. The workflow ends.</div>
+    </div>
+    <div class="br bad">
+      <div class="h">↳ outcome B · did not recover → revert loop</div>
+      <div class="d">The verifier calls <code>request_revert(pr_number, reason)</code>, which opens a
+        <b>second pull request reverting the merged change</b>. It cannot roll the cluster back itself — the
+        revert is a PR like any other. That PR re-enters <b>node 4, human review</b>, and the loop runs
+        again from there.</div>
+    </div>
+  </div>
+
+  <div class="loop">
+    <div class="lb">Revert loop</div>
+    <div class="tx"><b>verifier → request_revert → new pull request → human review (node 4) → GitOps sync →
+      verifier.</b> The loop closes only when a human merges and the verifier independently confirms
+      recovery. At no point does any agent write to the cluster, merge a pull request, or hold a credential
+      that would let it.</div>
+  </div>
+  </div>
+</div>
+
+<div class="spine">
+  <div class="sh"><span>Governance spine — enforced on every node in both workflows</span>
+    <span>manifests/agents/*.yaml · manifests/delivery/*.yaml</span></div>
+  <div class="sg">
+    <div><div class="t">Typed output</div><div class="b">Every node declares a Pydantic schema. The runtime
+      enforces it; an unparseable response is a failed node and stops the workflow rather than passing
+      nothing downstream.</div></div>
+    <div><div class="t">Scoped tools</div><div class="b">Tools come from the manifest, not the code. A node
+      can only call what it was granted — an ungranted call is denied by the proxy and recorded as a
+      denial.</div></div>
+    <div><div class="t">Budget ceiling</div><div class="b">Per-run token and tool-call caps, checked before
+      every dispatch. A runaway loop is stopped by the ledger, not by hope.</div></div>
+    <div><div class="t">Blast radius</div><div class="b">Maximum files and changed lines per patch.
+      Exceeding it is refused at the write path, so an over-eager fix cannot be produced at all.</div></div>
+    <div><div class="t">Audit trail</div><div class="b">Every tool call — allowed or denied — is written
+      with agent, decision, reason, latency and token cost, per incident.</div></div>
+  </div>
+</div>
+
+<div class="foot">
+  <span>Warden Flow · github.com/mazzyy/Warden-Flow</span>
+  <span>Reverie Hacks 2026 · ML Prompt Engineering</span>
+</div>
+
+
+<script>
+  // Draw the revert loop as an actual loop: measure where node 4 and the
+  // revert-loop box ended up, then span the return path between them.
+  window.addEventListener('load', () => {
+    const wrap = document.getElementById('looped');
+    const human = document.getElementById('opHuman');
+    const loop  = document.querySelector('.loop');
+    const path  = document.getElementById('retpath');
+    if(!wrap || !human || !loop || !path) return;
+    const w = wrap.getBoundingClientRect();
+    const h = human.getBoundingClientRect();
+    const l = loop.getBoundingClientRect();
+    const top = h.top - w.top + h.height / 2;
+    path.style.top = top + 'px';
+    path.style.height = (l.top - w.top + l.height / 2 - top) + 'px';
+  });
+</script>
+
+</body></html>

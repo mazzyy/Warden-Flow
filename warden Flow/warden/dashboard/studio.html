@@ -182,6 +182,106 @@
   .err{font-size:12.5px;color:var(--bad);font-family:var(--mono);background:rgba(248,113,113,.06);
     border:1px solid rgba(248,113,113,.22);border-radius:9px;padding:11px 13px;white-space:pre-wrap}
 
+  .deployhero{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:12px;
+    border:1px solid var(--line2);background:var(--panel);flex-wrap:wrap}
+  .deployhero .dot{width:11px;height:11px;border-radius:50%;background:var(--dim);flex:none}
+  .deployhero .dot.on{background:var(--ok);box-shadow:0 0 0 4px rgba(52,211,153,.18)}
+  .deployhero .t{flex:1;min-width:180px}
+  .deployhero .h{font-size:14.5px;font-weight:750;color:var(--ink)}
+  .deployhero .s{font-size:12.5px;color:var(--sub);font-family:var(--mono);word-break:break-all}
+
+  /* ---------- empty state: the pipeline, drawn ---------- */
+  .hero .eyebrow{font-family:var(--mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--teal);margin-bottom:10px}
+  .hero h2{font-size:clamp(24px,3.1vw,34px);font-weight:750;letter-spacing:-.022em;line-height:1.12;
+    margin-bottom:10px;max-width:20ch;text-wrap:balance}
+  .hero p{color:var(--sub);font-size:14.5px;max-width:62ch}
+  .hero p b{color:var(--ink);font-weight:650}
+
+  .flow{width:100%;height:auto;max-width:1160px;display:block;margin-top:4px;overflow:visible}
+  .fl-conn{stroke:var(--line2);stroke-width:1.5}
+  .fl-arrow{fill:none;stroke:var(--line2);stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+  .fl-type{fill:var(--faint);font-family:var(--mono);font-size:9.5px;text-anchor:middle;
+    letter-spacing:.04em}
+  .fl-lb{fill:var(--ink);font-size:12px;font-weight:650;text-anchor:middle}
+  .fl-sub{fill:var(--dim);font-size:10.5px;text-anchor:middle;font-family:var(--mono)}
+  .fl-idx{fill:var(--teal);font-family:var(--mono);font-size:11px;text-anchor:middle;opacity:.85}
+  .fl-glyph{fill:var(--indigo);font-family:var(--mono);font-size:15px;text-anchor:middle}
+
+  .fl-n rect,.fl-n circle{fill:var(--panel);stroke:var(--line2);stroke-width:1.5}
+  .fl-agent rect{stroke:var(--teal);fill:rgba(45,212,191,.07)}
+  .fl-src rect{stroke:var(--indigo);fill:rgba(129,140,248,.07)}
+  .fl-human circle{stroke:var(--amber);fill:rgba(251,191,36,.08)}
+  .fl-live circle{stroke:var(--ok);fill:rgba(52,211,153,.08)}
+  .fl-person circle,.fl-person path{fill:none;stroke:var(--amber);stroke-width:1.6;stroke-linecap:round}
+  .fl-globe circle,.fl-globe path{fill:none;stroke:var(--ok);stroke-width:1.4}
+
+  .fl-band{fill:rgba(45,212,191,.035);stroke:rgba(45,212,191,.16);stroke-width:1;
+    stroke-dasharray:3 4}
+  .fl-band-lb{fill:var(--teal);font-family:var(--mono);font-size:9.5px;text-anchor:middle;
+    letter-spacing:.09em;text-transform:uppercase;opacity:.8}
+  .fl-cut{stroke:var(--amber);stroke-width:1;stroke-dasharray:2 5;opacity:.5}
+  .fl-cut-lb{fill:var(--amber);font-family:var(--mono);font-size:9.5px;letter-spacing:.09em;
+    text-transform:uppercase;opacity:.75}
+
+  /* a typed object travelling the wire, and each node waking as it arrives */
+  .fl-pulse{stroke:var(--teal);stroke-width:2.5;stroke-linecap:round;
+    stroke-dasharray:16 400;stroke-dashoffset:16;opacity:0;
+    animation:travel 3.4s var(--d) cubic-bezier(.5,0,.5,1) infinite}
+  @keyframes travel{
+    0%,4%{stroke-dashoffset:16;opacity:0}
+    8%{opacity:.95}
+    38%{stroke-dashoffset:-150;opacity:.95}
+    46%,100%{stroke-dashoffset:-150;opacity:0}
+  }
+  .fl-n rect,.fl-n circle{animation:wake 3.4s var(--d) ease-in-out infinite}
+  @keyframes wake{
+    0%,6%{filter:none}
+    16%{filter:drop-shadow(0 0 7px rgba(45,212,191,.55))}
+    34%,100%{filter:none}
+  }
+  .fl-human circle{animation-name:wakeAmber}
+  @keyframes wakeAmber{
+    0%,6%{filter:none}
+    16%{filter:drop-shadow(0 0 8px rgba(251,191,36,.6))}
+    34%,100%{filter:none}
+  }
+  .fl-live circle{animation-name:wakeOk}
+  @keyframes wakeOk{
+    0%,6%{filter:none}
+    16%{filter:drop-shadow(0 0 8px rgba(52,211,153,.6))}
+    34%,100%{filter:none}
+  }
+
+  /* ---------- claims ---------- */
+  .claims{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+  .claim{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:15px 16px}
+  .claim .n{font-family:var(--mono);font-size:26px;font-weight:600;color:var(--teal);line-height:1;
+    font-variant-numeric:tabular-nums}
+  .claim .l{font-size:12.5px;font-weight:700;color:var(--ink);margin-top:7px}
+  .claim .d{font-size:12px;color:var(--dim);margin-top:5px;line-height:1.5}
+
+  /* ---------- collapsed setup ---------- */
+  .setup{border:1px solid var(--line);border-radius:12px;background:var(--panel2);overflow:hidden}
+  .setup>summary{cursor:pointer;padding:13px 16px;font-size:13px;font-weight:650;color:var(--sub);
+    list-style:none;display:flex;align-items:center;gap:9px;user-select:none}
+  .setup>summary::-webkit-details-marker{display:none}
+  .setup>summary::before{content:"▸";color:var(--faint);font-size:11px;transition:.18s}
+  .setup[open]>summary::before{transform:rotate(90deg)}
+  .setup>summary:hover{color:var(--ink)}
+  .setup>summary:focus-visible{outline:2px solid var(--teal);outline-offset:-2px}
+  .setup .two{padding:0 14px 14px}
+
+  .alsoline{display:flex;align-items:flex-start;gap:10px;font-size:13px;color:var(--dim);
+    padding:13px 15px;border:1px solid var(--line);border-radius:11px;background:var(--panel2)}
+  .alsoline .dot{width:7px;height:7px;border-radius:50%;background:var(--indigo);flex:none;margin-top:7px;
+    box-shadow:0 0 0 3px rgba(129,140,248,.14)}
+
+  @media(prefers-reduced-motion:reduce){
+    .fl-pulse{animation:none;opacity:.5;stroke-dashoffset:-150}
+    .fl-n rect,.fl-n circle{animation:none}
+  }
+
   /* artifact tabs */
   .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
   .tabs button{background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);
@@ -284,6 +384,7 @@ const NODES = [
   {key:"deploy_plan",      label:"Deploy plan", desc:"Write deploy manifests, rollout strategy and rollback."},
   {key:"verify_artifacts", label:"Verify",      desc:"Gate every generated artifact before a human sees it."},
   {key:"pr",               label:"Pull request",desc:"The human review boundary — the only write primitive."},
+  {key:"deployed",         label:"Live site",   desc:"Where this ships once the pull request is merged."},
 ];
 const NODE = Object.fromEntries(NODES.map(n=>[n.key,n]));
 
@@ -300,7 +401,7 @@ const state = {
   tokens:0,
   node:{},                 // key -> {status, thinking, tokens, model, error}
   out:{},                  // key -> structured output
-  clone:null, pr:null, runId:null,
+  clone:null, pr:null, deploy:null, runId:null,
   artifact:0,              // selected artifact tab on the summary view
 };
 
@@ -318,6 +419,7 @@ function summaryLine(key){
     case "deploy_plan":  return (o?.manifests||[]).length + " manifests · " + (o?.strategy||"");
     case "verify_artifacts": return o?.passed ? "passed — safe to review" : "failed the gate";
     case "pr":           return state.pr?.pr_url ? "opened" : (state.pr ? "pushed" : "skipped");
+    case "deployed":     return state.deploy?.live ? "serving now" : (state.deploy?.detail || "target set");
   }
   return "done";
 }
@@ -456,7 +558,21 @@ function viewNode(key){
       <div class="muted">These are static checks on the generated text. They do not execute the pipeline.</div>`;
   }
   if(key==="pr") return prBlock();
+  if(key==="deployed") return deployBlock();
   return "";
+}
+
+function deployBlock(){
+  const d = state.deploy;
+  if(!d || !d.url) return `<div class="muted">No deploy target configured. Set <code>DEPLOY_URL</code> in <code>.env</code> to end the run on a clickable site.</div>`;
+  const live = !!d.live;
+  return `<div class="verdict ${live?"pass":"fail"}">
+      <div class="g">${live?"●":"○"}</div>
+      <div><div class="h">${live?"Serving now":"Not serving yet"}</div>
+      <div class="s">${esc(d.detail||"")}</div></div></div>
+    <a class="cta" href="${esc(d.url)}" target="_blank" rel="noopener">Open the deployed site ↗</a>
+    <div class="kv"><b>${esc(d.url)}</b></div>
+    ${live ? "" : `<div class="note"><span>→</span><span>This is the target the generated pipeline deploys to. It goes live when the pull request is merged and the deploy job runs.</span></div>`}`;
 }
 
 function prBlock(){
@@ -507,6 +623,15 @@ function viewSummary(){
       <div class="s">${done} nodes · ${numfmt(state.tokens)} tokens · ${secs}s · ${(v.issues||[]).length} open issue${(v.issues||[]).length===1?"":"s"}</div></div></div>`;
   }
 
+  if(state.phase==="done" && state.deploy?.url){
+    const live = !!state.deploy.live;
+    h += `<div class="deployhero">
+        <div class="dot ${live?"on":""}"></div>
+        <div class="t"><div class="h">${live?"Live now":"Deploy target"}</div>
+          <div class="s">${esc(state.deploy.url)} · ${esc(state.deploy.detail||"")}</div></div>
+        <a class="cta" href="${esc(state.deploy.url)}" target="_blank" rel="noopener">Open the site ↗</a>
+      </div>`;
+  }
   if(state.phase==="done" && state.pr) h += prBlock();
 
   if(arts.length){
@@ -524,34 +649,129 @@ function viewSummary(){
   return h;
 }
 
+/* ------------------------------------------------------------------ */
+/* Empty state. This is the first thing anyone sees — a judge, a demo   */
+/* viewer — so it shows the mechanism rather than describing it. The    */
+/* diagram is the thesis: single-purpose nodes, a typed object on every */
+/* handoff, and exactly one place a human stands.                       */
+/* ------------------------------------------------------------------ */
+
+const HERO = [
+  { t:"repo",         sub:"your service",  kind:"src",   out:"source"       },
+  { t:"assess",       sub:"reads the code",kind:"agent", out:"RepoProfile"  },
+  { t:"containerize", sub:"the image",     kind:"agent", out:"Dockerfile"   },
+  { t:"pipeline",     sub:"CI/CD",         kind:"agent", out:"Pipeline"     },
+  { t:"deploy plan",  sub:"manifests",     kind:"agent", out:"DeployPlan"   },
+  { t:"verify",       sub:"the gate",      kind:"agent", out:"VerifyReport" },
+  { t:"human review", sub:"a pull request",kind:"human", out:"merge"        },
+  { t:"live",         sub:"deployed",      kind:"live",  out:""             },
+];
+
+const GLYPH = { src:"❯", agent:"", human:"", live:"" };
+
+function heroFlow(){
+  const W = 1160, H = 224, R = 23, CY = 84;
+  const x = i => 62 + i * ((W - 124) / (HERO.length - 1));
+
+  let conn = "", pulse = "", nodes = "";
+
+  HERO.forEach((n, i) => {
+    const cx = x(i);
+
+    if(i < HERO.length - 1){
+      const nx = x(i + 1);
+      conn += `<line x1="${cx + R + 7}" y1="${CY}" x2="${nx - R - 7}" y2="${CY}"
+                     class="fl-conn" />`;
+      // the typed object this node hands to the next one — the whole argument,
+      // written on the wire where it actually travels
+      conn += `<text x="${(cx + nx) / 2}" y="${CY - 15}" class="fl-type">${n.out}</text>`;
+      conn += `<path d="M${nx - R - 12} ${CY - 4} L${nx - R - 7} ${CY} L${nx - R - 12} ${CY + 4}"
+                     class="fl-arrow" />`;
+      pulse += `<line x1="${cx + R + 7}" y1="${CY}" x2="${nx - R - 7}" y2="${CY}"
+                      class="fl-pulse" style="--d:${i * 0.42}s" />`;
+    }
+
+    const shape = n.kind === "human" || n.kind === "live"
+      ? `<circle cx="${cx}" cy="${CY}" r="${R}" />`
+      : `<rect x="${cx - R}" y="${CY - R}" width="${R * 2}" height="${R * 2}" rx="9" />`;
+
+    nodes += `<g class="fl-n fl-${n.kind}" style="--d:${i * 0.42}s">
+        ${shape}
+        ${n.kind === "src" ? `<text x="${cx}" y="${CY + 6}" class="fl-glyph">${GLYPH.src}</text>` : ""}
+        ${n.kind === "agent" ? `<text x="${cx}" y="${CY + 5}" class="fl-idx">${i}</text>` : ""}
+        ${n.kind === "human" ? `<g class="fl-person" transform="translate(${cx},${CY})">
+            <circle cx="0" cy="-6" r="5.5" />
+            <path d="M-9 9 a9 9 0 0 1 18 0" />
+          </g>` : ""}
+        ${n.kind === "live" ? `<g class="fl-globe" transform="translate(${cx},${CY})">
+            <circle cx="0" cy="0" r="10.5" />
+            <path d="M-10.5 0 H10.5 M0 -10.5 a14 14 0 0 1 0 21 a14 14 0 0 1 0 -21" />
+          </g>` : ""}
+        <text x="${cx}" y="${CY + R + 26}" class="fl-lb">${n.t}</text>
+        <text x="${cx}" y="${CY + R + 42}" class="fl-sub">${n.sub}</text>
+      </g>`;
+  });
+
+  // the boundary: everything left of it is the fleet, everything right is people
+  // 0.66 of the way, not the midpoint — the midpoint is exactly where the
+  // VerifyReport type label sits, and the two collided.
+  const bx = x(5) + 0.66 * (x(6) - x(5));
+  const band = `<rect x="${x(1) - R - 14}" y="${CY - R - 22}" width="${x(5) - x(1) + R * 2 + 28}"
+      height="${R * 2 + 44}" rx="14" class="fl-band" />
+    <text x="${(x(1) + x(5)) / 2}" y="${CY - R - 30}" class="fl-band-lb">five agents · one job each</text>
+    <line x1="${bx}" y1="${CY - R - 26}" x2="${bx}" y2="${CY + R + 62}" class="fl-cut" />
+    <text x="${bx + 8}" y="${CY + R + 60}" class="fl-cut-lb">people from here</text>`;
+
+  return `<svg class="flow" viewBox="0 0 ${W} ${H}" role="img"
+      aria-label="Pipeline: repo, then five agent nodes — assess, containerize, pipeline, deploy plan, verify — then human review as a pull request, then the live deployment.">
+    ${band}${conn}${pulse}${nodes}
+  </svg>`;
+}
+
 function viewWelcome(){
   return `
   <div class="hero">
-    <h2>An AI DevOps engineer for your repository.</h2>
-    <p>Point it at a service. It reads the code, writes the container, the CI/CD pipeline and the deploy
-       manifests, validates all three, and hands them back as a pull request you review. Each node is a
-       separate prompt returning a typed object — no single mega-prompt makes every infrastructure decision.</p>
-    <div class="flowline">
-      <span class="s">assess</span>→<span class="s">containerize</span>→<span class="s">pipeline</span>
-      →<span class="s">deploy plan</span>→<span class="s">verify</span>→<span class="s">human review</span>
+    <div class="eyebrow">Warden Flow · DELIVER</div>
+    <h2>Your repository goes in. Reviewed DevOps comes out.</h2>
+    <p>Five single-purpose agents, each returning a <b>typed object</b> the next one reads.
+       No mega-prompt makes every infrastructure decision, and the only thing the fleet can
+       write is a pull request.</p>
+  </div>
+
+  ${heroFlow()}
+
+  <div class="claims">
+    <div class="claim"><div class="n">5</div><div class="l">agents, one job each</div>
+      <div class="d">Assess, containerize, pipeline, deploy-plan, verify — separate prompts, separate budgets.</div></div>
+    <div class="claim"><div class="n">1</div><div class="l">way to write anything</div>
+      <div class="d">A pull request. No agent holds cluster or registry credentials.</div></div>
+    <div class="claim"><div class="n">100%</div><div class="l">of calls audited</div>
+      <div class="d">Every tool call is policy-checked, budget-capped and written to the trail.</div></div>
+  </div>
+
+  <details class="setup">
+    <summary>Setup — repo, model, pull requests</summary>
+    <div class="two">
+      <div class="box"><h3><span class="n">1</span>Point it at a repo</h3>
+        <p>Paste a GitHub URL above, or keep the bundled sample to watch the whole workflow run offline for free.</p>
+        <pre>examples/checkout-svc</pre></div>
+      <div class="box"><h3><span class="n">2</span>Run it live</h3>
+        <p>Tick <b>live model</b>. Configure a provider in <code>.env</code> — Gemini and Vertex directly, Azure OpenAI, OpenAI and Anthropic through LiteLLM.</p>
+        <pre>DELIVER_MODEL=azure/gpt-5.6-sol</pre></div>
+      <div class="box"><h3><span class="n">3</span>Get a pull request</h3>
+        <p>Tick <b>open PR</b> to push the generated DevOps back for review. Needs Contents, Workflows and Pull requests write.</p>
+        <pre>GITHUB_TOKEN=github_pat_…</pre></div>
+      <div class="box"><h3><span class="n">4</span>End on a live site</h3>
+        <p>Merging runs the generated pipeline — build, test, scan, push, deploy the exact commit image.</p>
+        <pre>DEPLOY_URL=https://your-site.com</pre></div>
     </div>
-  </div>
-  <div class="two">
-    <div class="box"><h3><span class="n">1</span>Point it at a repo</h3>
-      <p>Paste a GitHub URL above, or keep the bundled sample to see the whole workflow run offline for free.</p>
-      <pre>examples/checkout-svc</pre></div>
-    <div class="box"><h3><span class="n">2</span>Run it live</h3>
-      <p>Tick <b>live model</b>. Configure a provider in <code>.env</code> — Gemini and Vertex directly, Azure OpenAI, OpenAI and Anthropic through LiteLLM.</p>
-      <pre>DELIVER_MODEL=azure/gpt-5.6-sol</pre></div>
-    <div class="box"><h3><span class="n">3</span>Get a pull request</h3>
-      <p>Tick <b>open PR</b> to push the generated DevOps back to your repo for review. Needs Contents, Workflows and Pull requests write.</p>
-      <pre>GITHUB_TOKEN=github_pat_…</pre></div>
-    <div class="box"><h3><span class="n">4</span>Deploy on merge</h3>
-      <p>Merging the PR runs the generated pipeline: build, test, scan, push to your registry, deploy the exact commit image.</p>
-      <pre>make bench-deliver   # workflow vs single prompt</pre></div>
-  </div>
-  <div class="muted">Warden Flow also runs <a href="/incidents">OPERATE</a> — the reactive incident workflow that
-    triages an alert, diagnoses it, and proposes a GitOps fix through the same governed spine.</div>`;
+  </details>
+
+  <div class="alsoline">
+    <span class="dot"></span>
+    <span>Warden Flow also runs <a href="/incidents">OPERATE</a> — the reactive fleet that triages a
+      production alert, diagnoses root cause, and proposes a GitOps fix through this same governed spine.</span>
+  </div>`;
 }
 
 /* ---------------- event handling ---------------- */
@@ -582,9 +802,10 @@ function handle(ev){
   }
   else if(ev.status==="done"){
     setNode(k,{status:"ok", tokens:ev.tokens||0, model:ev.model||""});
-    if(k==="clone")      state.clone = ev;
-    else if(k==="pr")    state.pr = ev.pr;
-    else                 state.out[k] = ev.output || {};
+    if(k==="clone")           state.clone = ev;
+    else if(k==="pr")         state.pr = ev.pr;
+    else if(k==="deployed")   state.deploy = {url:ev.url, live:ev.live, detail:ev.detail, httpStatus:ev.httpStatus};
+    else                      state.out[k] = ev.output || {};
     state.tokens += (ev.tokens||0);
     $("mTokens").innerHTML = `<b>${numfmt(state.tokens)}</b> tok`;
     if(state.view===k || state.follow) select(k); else renderRail();
@@ -622,7 +843,7 @@ async function run(){
   const live = $("live").checked, pr = $("openpr").checked;
 
   Object.assign(state,{phase:"running",view:"summary",follow:true,tokens:0,
-    node:{},out:{},clone:null,pr:null,runId:null,artifact:0});
+    node:{},out:{},clone:null,pr:null,deploy:null,runId:null,artifact:0});
   btn.disabled = true;
   $("mTokens").innerHTML = "<b>0</b> tok";
   startTimer();
