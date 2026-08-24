@@ -46,6 +46,64 @@ def deploy_hint() -> str:
     return _TARGETS.get(target, _TARGETS["containerapp"])
 
 
+# --------------------------------------------------------------------------
+# Pipeline rules — ONE definition, injected into every path that asks a model
+# for a workflow. This used to be an inline "push (main only)" string repeated
+# in `deliver()`, in `deliver_events()` and in the node instruction, which is
+# exactly how the three drifted apart and how a generated pipeline shipped a
+# `main` gate to a repo whose default branch is `master`.
+#
+# The rules below encode the two failure modes observed on a real run:
+#   1. a hardcoded branch name that does not match the repository, so the
+#      deploy job silently never fires after merge;
+#   2. a third-party action pinned to a tag that does not exist, or a scanner
+#      installer that rate-limits on shared runners.
+# Neither is catchable by static validation, so they are prevented at
+# generation time instead.
+# --------------------------------------------------------------------------
+
+_DEFAULT_BRANCH_GATE = (
+    "github.event_name == 'push' && "
+    "github.ref_name == github.event.repository.default_branch"
+)
+
+PIPELINE_RULES = f"""\
+Stages, in order: build, test, scan, push, deploy.
+
+BRANCH GATING — never hardcode a branch name. This repository's default branch
+is NOT necessarily 'main'. Gate the push and deploy jobs on the repository's own
+default branch, exactly:
+
+    if: {_DEFAULT_BRANCH_GATE}
+
+A gate that names a branch literally ('refs/heads/main') is wrong even when it
+happens to match: it breaks silently on any repo that uses a different default,
+and a deploy job that never fires looks identical to one that succeeded.
+
+THIRD-PARTY ACTIONS — pin every action to a tag that actually resolves. If you
+are not certain a tag exists, do not invent one: run the tool from its official
+container image instead. For vulnerability scanning, prefer
+
+    docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \\
+      aquasec/trivy:<pinned> image --exit-code 1 --severity HIGH,CRITICAL <image>
+
+over an installer action — installers that fetch release binaries from the
+GitHub API rate-limit on shared runners and fail the job for no real reason.
+
+SECRETS — reference them as ${{{{ secrets.NAME }}}} and never echo one. Grant an
+explicit minimal `permissions:` block, not the default write-all token."""
+
+
+def pipeline_rules() -> str:
+    """Branch-gating, action-pinning and secret rules for the Pipeline node."""
+    return PIPELINE_RULES
+
+
+def default_branch_gate() -> str:
+    """The `if:` expression a correct push/deploy job must use."""
+    return _DEFAULT_BRANCH_GATE
+
+
 # Whether the Kubernetes manifests the deploy-plan node writes are the ACTIVE
 # deploy artifact (a k8s target substitutes the image into them and applies them)
 # or REFERENCE-ONLY (Container Apps / App Service run the container directly, so

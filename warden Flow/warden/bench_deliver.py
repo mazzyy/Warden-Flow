@@ -1,4 +1,4 @@
-"""warden bench-deliver — prove the DELIVER workflow beats a single prompt.
+"""warden bench-deliver — measure the DELIVER workflow against a single prompt.
 
 Containerizes the SAME service two ways and scores both Dockerfiles against a
 production best-practice checklist, computed by inspecting the Dockerfile text —
@@ -7,10 +7,19 @@ not asserted:
   * SINGLE PROMPT  — "here's my app, write a Dockerfile" → one answer.
   * WARDEN FLOW    — the staged Assess → Containerize workflow.
 
-    python -m warden.bench_deliver           # offline: scripted, free, deterministic
-    python -m warden.bench_deliver --live     # real models (DELIVER_MODEL or Gemini)
+    python -m warden.bench_deliver                 # offline REPLAY — see below
+    python -m warden.bench_deliver --live          # real models, one sample each
+    python -m warden.bench_deliver --live -n 5     # real models, five samples each
 
-Both paths use the same model, so the ONLY variable is structure.
+OFFLINE MODE IS A REPLAY, NOT A MEASUREMENT.  With no `--live`, both sides are
+fixtures: the workflow runs scripted models and the single-prompt side returns a
+RECORDED answer (see `RECORDED_SINGLE_PROMPT`). It exists so the demo runs with
+no API key and no cost, and so the scoring function itself is testable — it is
+NOT evidence about either approach, and the banner says so on every run.
+
+The number worth quoting is `--live -n 5`: same model, same service, same
+scoring function, five samples each, so the only variable is structure and you
+can see the variance rather than one lucky draw.
 """
 
 from __future__ import annotations
@@ -39,10 +48,12 @@ RED, GREEN, YELLOW = "\033[31m", "\033[32m", "\033[33m"
 
 TARGET = "examples/checkout-svc"
 
-# What a single naive prompt typically returns: it works, and it's insecure —
-# unpinned base, root user, the whole context copied, a token baked into a layer,
-# no scan-friendly structure, no healthcheck.
-NAIVE_DOCKERFILE = """\
+# A RECORDED single-prompt answer, replayed in offline mode so the benchmark
+# runs without an API key. It is a real observed shape — unpinned base, root
+# user, whole context copied, a token baked into a layer, no healthcheck — but
+# replaying it proves nothing about what a model does today. Any claim about
+# the single-prompt baseline must come from `--live`.
+RECORDED_SINGLE_PROMPT = """\
 FROM python:latest
 WORKDIR /app
 COPY . .
@@ -134,7 +145,7 @@ async def run_workflow(live: bool) -> str:
 
 async def run_single_prompt(live: bool) -> str:
     if not live:
-        return NAIVE_DOCKERFILE
+        return RECORDED_SINGLE_PROMPT
     prompt = _naive_prompt(Path(TARGET))
     dm = os.environ.get("DELIVER_MODEL", "")
     if dm and not dm.startswith("gemini"):
@@ -152,44 +163,75 @@ async def run_single_prompt(live: bool) -> str:
     return _extract_dockerfile(resp.text or "")
 
 
-def print_scoreboard(single: dict[str, bool], flow: dict[str, bool]) -> None:
-    def cell(v: bool) -> str:
-        return f"{GREEN}pass{RESET}" if v else f"{RED}FAIL{RESET}"
+def _rate(results: list[dict[str, bool]], check: str) -> float:
+    return sum(1 for r in results if r.get(check)) / max(len(results), 1)
 
-    print(f"\n{BOLD}SCOREBOARD  {DIM}(same service, same model — only the structure differs){RESET}")
+
+def print_scoreboard(
+    single: list[dict[str, bool]], flow: list[dict[str, bool]], *, live: bool
+) -> None:
+    n = len(single)
+
+    def cell(rate: float) -> str:
+        if n == 1:
+            return f"{GREEN}pass{RESET}" if rate == 1.0 else f"{RED}FAIL{RESET}"
+        colour = GREEN if rate == 1.0 else (YELLOW if rate > 0 else RED)
+        return f"{colour}{int(round(rate * n))}/{n}{RESET}"
+
+    header = "pass rate over " + str(n) + " samples" if n > 1 else "single run"
+    print(f"\n{BOLD}SCOREBOARD  {DIM}(same service, same model, same scorer — "
+          f"only the structure differs · {header}){RESET}")
     print(f"  {'best-practice check':<30}{DIM}single prompt   warden flow{RESET}")
     for c in CHECKS:
-        s = cell(single.get(c, False))
-        f = cell(flow.get(c, False))
-        pad_s = s + " " * (16 - len("pass"))
-        print(f"  {c:<30}{pad_s}{f}")
-    sp = sum(single.values())
-    fp = sum(flow.values())
-    print(f"\n  {BOLD}score{RESET}  single prompt {RED}{sp}/{len(CHECKS)}{RESET}   ·   "
-          f"warden flow {GREEN}{fp}/{len(CHECKS)}{RESET}")
+        s = cell(_rate(single, c))
+        f = cell(_rate(flow, c))
+        print(f"  {c:<30}{s + ' ' * (16 - 4)}{f}")
+
+    sp = sum(sum(r.values()) for r in single) / n
+    fp = sum(sum(r.values()) for r in flow) / n
+    label = "mean score" if n > 1 else "score"
+    print(f"\n  {BOLD}{label}{RESET}  single prompt {RED}{sp:.1f}/{len(CHECKS)}{RESET}   ·   "
+          f"warden flow {GREEN}{fp:.1f}/{len(CHECKS)}{RESET}")
     print(f"  {DIM}Both produce a Dockerfile that builds. Only one is safe to ship.{RESET}")
 
+    if not live:
+        print(f"\n  {YELLOW}NOTE{RESET} {DIM}offline mode REPLAYS fixtures on both sides — this is a "
+              f"demo of the scorer, not\n       evidence. Quote `--live -n 5`, "
+              f"which runs both paths on a real model.{RESET}")
 
-async def main(live: bool) -> int:
+
+async def main(live: bool, samples: int) -> int:
     warnings.filterwarnings("ignore", category=UserWarning, module="google.*")
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(name)s: %(message)s")
     load_env_file()
 
+    if not live and samples > 1:
+        print(f"{DIM}offline mode is deterministic — falling back to 1 sample.{RESET}")
+        samples = 1
+
     print(f"\n{BOLD}WARDEN FLOW — benchmark: containerize a service, workflow vs single prompt{RESET}")
     print(f"  target     {TARGET}")
-    print(f"  models     {'LIVE' if live else 'scripted (offline, free, deterministic)'}")
+    print(f"  models     {'LIVE' if live else 'REPLAY (offline fixtures, free, deterministic)'}")
+    print(f"  samples    {samples} per approach")
     if live and os.environ.get("DELIVER_MODEL"):
         print(f"  provider   {os.environ['DELIVER_MODEL']}")
 
-    print(f"\n{DIM}running single prompt…{RESET}")
-    single_df = await run_single_prompt(live)
-    print(f"{DIM}running warden flow…{RESET}")
-    flow_df = await run_workflow(live)
+    singles: list[dict[str, bool]] = []
+    flows: list[dict[str, bool]] = []
+    last_single = ""
 
-    print_scoreboard(score_dockerfile(single_df), score_dockerfile(flow_df))
+    for i in range(samples):
+        tag = f" [{i + 1}/{samples}]" if samples > 1 else ""
+        print(f"\n{DIM}running single prompt{tag}…{RESET}")
+        last_single = await run_single_prompt(live)
+        singles.append(score_dockerfile(last_single))
+        print(f"{DIM}running warden flow{tag}…{RESET}")
+        flows.append(score_dockerfile(await run_workflow(live)))
 
-    print(f"\n{DIM}  single prompt's Dockerfile (first lines):{RESET}")
-    for line in single_df.splitlines()[:7]:
+    print_scoreboard(singles, flows, live=live)
+
+    print(f"\n{DIM}  single prompt's Dockerfile — last sample, first lines:{RESET}")
+    for line in last_single.splitlines()[:7]:
         print(f"    {RED}│{RESET} {line}")
     print()
     return 0
@@ -198,5 +240,7 @@ async def main(live: bool) -> int:
 if __name__ == "__main__":
     p = argparse.ArgumentParser(description="Benchmark containerization: workflow vs single prompt.")
     p.add_argument("--live", action="store_true", help="use real models for both paths")
+    p.add_argument("-n", "--samples", type=int, default=1,
+                   help="samples per approach (live only) — use 5 to show variance")
     args = p.parse_args()
-    raise SystemExit(asyncio.run(main(args.live)))
+    raise SystemExit(asyncio.run(main(args.live, max(1, args.samples))))

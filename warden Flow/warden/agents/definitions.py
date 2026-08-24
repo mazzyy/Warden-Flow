@@ -176,7 +176,16 @@ and security are the whole job — a Dockerfile that builds but runs as root wit
 an unpinned base is a failure, not a fix.
 
 Enforce every one of these, and record each in security_notes:
-  - PIN the base image to a specific minor version (never ':latest').
+  - PIN the base image to a MINOR series (e.g. `alpine:3.22`, `node:22-alpine3.22`)
+    and never ':latest'. Do NOT pin a frozen patch tag like `alpine:3.20.3` —
+    that freezes the image at the CVE set of the day that tag was cut, and every
+    security fix released since is permanently excluded. A minor-series tag is
+    reproducible enough and still receives patches.
+  - The series you pin MUST still be supported by its distribution. An
+    end-of-life base receives no security updates at all, so a scanner will
+    fail the build on vulnerabilities that can never be fixed. If you are not
+    confident a series is current, choose a more recent one — being one release
+    ahead is recoverable, being past end-of-life is not.
   - Use a MULTI-STAGE build: build/deps in one stage, a slim runtime in the
     final stage, so build tools never ship.
   - Create and switch to a NON-ROOT user for the final stage.
@@ -202,8 +211,9 @@ The stages, in order, and why each matters:
   - scan    — scan the built image for known vulnerabilities (e.g. Trivy) and
               fail on high/critical findings. A pipeline that pushes an unscanned
               image is the hole this stage exists to close.
-  - push    — push to the registry ONLY on the main branch, never on a PR.
-  - deploy  — deploy only after push, and only on main. The deploy job MUST
+  - push    — push to the registry ONLY on the repository's DEFAULT branch,
+              never on a pull request.
+  - deploy  — deploy only after push, and only on the default branch. The deploy job MUST
               update the running workload to the EXACT image this run built and
               pushed — by immutable digest or the commit-SHA tag — using the
               same manifests from k8s/. Do this with `kubectl apply -f k8s/`
@@ -217,7 +227,19 @@ Hard rules, because they are the difference between a real pipeline and a toy:
     ${{ secrets.NAME }}. NEVER hardcode a credential, and never `echo` a secret.
   - Grant the workflow the least privilege it needs (an explicit minimal
     `permissions:` block), not the default write-all token.
-  - Pin third-party actions to a version, not an unpinned branch.
+  - NEVER hardcode a branch name in a gate. You do not know this repository's
+    default branch, and guessing 'main' on a repo whose default is 'master'
+    produces a deploy job that skips forever — a failure that looks exactly like
+    success. Gate on the repository's own default branch:
+        if: github.event_name == 'push' && github.ref_name == github.event.repository.default_branch
+  - Pin third-party actions to a tag that ACTUALLY EXISTS. If you are not certain
+    of a tag, do not invent one — run the tool from its official container image
+    instead. This applies especially to scanners: installer actions that fetch
+    release binaries from the GitHub API rate-limit on shared runners and fail
+    the job for reasons that have nothing to do with the code.
+
+Every one of these is a thing that cannot be caught by reading the YAML — only by
+running it. Get them right here, because nothing downstream will.
 
 Return the complete workflow YAML. List the stages you actually included.
 """,
@@ -259,8 +281,11 @@ Check the things that actually break in production, and report each as passed or
 an issue:
   - Dockerfile: pinned base (not ':latest'), multi-stage, runs as non-root, no
     secret baked into a layer.
-  - Pipeline: has a scan stage, pushes only on main, references secrets rather
-    than hardcoding them, least-privilege permissions.
+  - Pipeline: has a scan stage; references secrets rather than hardcoding them;
+    least-privilege permissions; and gates push/deploy on the repository's
+    DEFAULT branch rather than a hardcoded name. Treat a literal branch gate
+    (`github.ref == 'refs/heads/main'`) as an ISSUE, not a pass — it is the
+    difference between a deploy that fires and one that skips in silence.
   - Manifests: resource limits set, liveness/readiness probes present, non-root
     securityContext, no ':latest' image.
   - Deploy consistency: you are TOLD the deploy target. Judge the image against

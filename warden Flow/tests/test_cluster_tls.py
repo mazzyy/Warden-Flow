@@ -29,7 +29,21 @@ PEM = "-----BEGIN CERTIFICATE-----\nZmFrZQ==\n-----END CERTIFICATE-----"
 
 
 @pytest.fixture(autouse=True)
-def _clean_env(monkeypatch):
+def _clean_env(monkeypatch, tmp_path):
+    """Isolate these tests from the developer's own .env.
+
+    Deleting the environment variables is NOT enough. `Settings` is configured
+    with `env_file=".env"` — a path relative to the working directory — so the
+    moment the cache is cleared, pydantic re-reads the real .env sitting in the
+    repo root and `aks_ca_cert_path` comes back populated. os.environ outranks
+    the dotenv file, so the four tests that SET the variable pass and the two
+    that expect it ABSENT fail — on a machine where AKS_CA_CERT_PATH is
+    configured for live cluster work, and nowhere else. That is a test-isolation
+    bug, not a behaviour change: it passes in CI because CI has no .env.
+
+    Running from an empty directory removes the file from the equation.
+    """
+    monkeypatch.chdir(tmp_path)
     for var in ("AKS_CA_CERT_PATH", "AKS_CA_CERT"):
         monkeypatch.delenv(var, raising=False)
     from warden.config import settings

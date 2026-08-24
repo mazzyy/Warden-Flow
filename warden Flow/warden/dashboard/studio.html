@@ -7,307 +7,669 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box}
   :root{
-    --bg:#0a0e16;--panel:#111826;--panel2:#0d141f;--line:#1d2634;--line2:#26313f;
-    --ink:#e8eef7;--sub:#93a1b3;--dim:#5a6676;
-    --teal:#2dd4bf;--indigo:#818cf8;--amber:#f59e0b;--ok:#34d399;--bad:#f87171;
-    --mono:'SFMono-Regular',ui-monospace,Menlo,Consolas,monospace;
+    --bg:#080b12; --shell:#0b0f18; --panel:#0f1420; --panel2:#0c111b; --raise:#131a28;
+    --line:#1a2231; --line2:#232d3e;
+    --ink:#e9eef7; --sub:#8d9bb0; --dim:#5b6779; --faint:#3c4657;
+    --teal:#2dd4bf; --indigo:#818cf8; --amber:#fbbf24; --ok:#34d399; --bad:#f87171;
+    --mono:ui-monospace,'SFMono-Regular',Menlo,Consolas,monospace;
+    --rail:268px; --top:64px;
   }
-  body{background:radial-gradient(1200px 600px at 70% -10%,#0f1a2b 0,var(--bg) 55%);
-    color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100vh}
+  html,body{height:100%}
+  body{
+    background:var(--bg); color:var(--ink); overflow:hidden;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:14px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
   a{color:var(--teal);text-decoration:none} a:hover{text-decoration:underline}
-  .wrap{max-width:1180px;margin:0 auto;padding:26px 24px 70px}
-  header{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
-  .brand{display:flex;align-items:baseline;gap:11px}
-  h1{font-size:23px;font-weight:800;letter-spacing:-.02em}
-  .brand .t{font-size:12.5px;color:var(--sub);font-weight:600}
-  .nav a{font-size:13px;padding:6px 12px;border:1px solid var(--line2);border-radius:8px;color:var(--ink)}
-  .lead{color:var(--sub);font-size:14px;max-width:820px;margin:9px 0 4px}
-  .lead b{color:var(--ink)}
-  .models{font-size:12px;color:var(--dim);margin-bottom:20px}
-  .models b{color:var(--sub)}
+  code{font-family:var(--mono)}
 
-  /* run bar */
-  .runpanel{background:var(--panel2);border:1px solid var(--line);border-radius:14px;padding:16px}
-  .runbar{display:flex;gap:11px;align-items:stretch;flex-wrap:wrap}
-  .field{display:flex;flex-direction:column;gap:5px;flex:1;min-width:240px}
-  .field label{font-size:10.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em;font-weight:700}
-  .field input{background:#080d15;border:1px solid var(--line2);color:var(--ink);border-radius:9px;
-    padding:10px 12px;font-family:var(--mono);font-size:13px}
-  .field input:focus{outline:none;border-color:var(--teal)}
-  .toggle{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-size:12px;
-    color:var(--sub);font-weight:650;cursor:pointer;padding:6px 11px;border:1px solid var(--line2);border-radius:9px}
-  .toggle span{font-size:9.5px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
-  .toggle input{accent-color:var(--teal)}
-  button.run{background:linear-gradient(180deg,#34e0cc,#17b4a3);color:#04211d;border:none;border-radius:9px;
-    padding:0 22px;font-weight:800;font-size:14px;cursor:pointer;transition:.15s;white-space:nowrap}
-  button.run:hover{filter:brightness(1.07)} button.run:disabled{opacity:.5;cursor:not-allowed}
+  /* ---------- shell ---------- */
+  .app{height:100vh;display:grid;grid-template-rows:var(--top) 1fr}
+  .top{
+    display:flex;align-items:center;gap:16px;padding:0 18px;
+    background:var(--shell);border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:baseline;gap:9px;flex:none}
+  .brand .mark{
+    width:22px;height:22px;border-radius:6px;flex:none;align-self:center;
+    background:linear-gradient(140deg,var(--teal),var(--indigo));
+    box-shadow:0 0 0 1px rgba(45,212,191,.3);
+  }
+  .brand h1{font-size:15px;font-weight:750;letter-spacing:-.01em}
+  .brand .t{font-size:11px;color:var(--dim);font-weight:600;letter-spacing:.03em;text-transform:uppercase}
 
-  /* thinking bar */
-  .think{display:none;align-items:center;gap:13px;margin-top:14px;padding:13px 15px;border-radius:11px;
-    background:linear-gradient(90deg,rgba(45,212,191,.10),rgba(129,140,248,.06));border:1px solid var(--line2)}
-  .think.on{display:flex}
-  .orb{width:26px;height:26px;border-radius:50%;flex:none;position:relative}
-  .orb::before,.orb::after{content:"";position:absolute;inset:0;border-radius:50%;
-    border:2px solid transparent;border-top-color:var(--teal);animation:spin .9s linear infinite}
-  .orb::after{inset:5px;border-top-color:var(--indigo);animation-duration:1.4s;animation-direction:reverse}
+  .runbar{display:flex;align-items:center;gap:8px;flex:1;min-width:0;max-width:820px;margin-left:8px}
+  .runbar input[type=text]{
+    flex:1;min-width:0;background:#060a11;border:1px solid var(--line2);color:var(--ink);
+    border-radius:8px;padding:8px 11px;font-family:var(--mono);font-size:12.5px;
+  }
+  .runbar input[type=text]:focus{outline:none;border-color:var(--teal);box-shadow:0 0 0 3px rgba(45,212,191,.10)}
+  .tg{
+    display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600;color:var(--sub);
+    padding:7px 10px;border:1px solid var(--line2);border-radius:8px;cursor:pointer;white-space:nowrap;
+    background:var(--panel2);user-select:none;
+  }
+  .tg:hover{border-color:var(--faint)}
+  .tg input{accent-color:var(--teal);cursor:pointer}
+  .tg.on{color:var(--ink);border-color:rgba(45,212,191,.45);background:rgba(45,212,191,.07)}
+  button.run{
+    background:linear-gradient(180deg,#38e2ce,#15b0a0);color:#03211d;border:none;border-radius:8px;
+    padding:9px 18px;font-weight:750;font-size:13px;cursor:pointer;white-space:nowrap;transition:.14s;
+  }
+  button.run:hover{filter:brightness(1.08)}
+  button.run:disabled{opacity:.45;cursor:not-allowed;filter:none}
+  .topmeta{margin-left:auto;display:flex;align-items:center;gap:14px;flex:none}
+  .topmeta .m{font-family:var(--mono);font-size:11.5px;color:var(--dim);white-space:nowrap}
+  .topmeta .m b{color:var(--sub);font-weight:600}
+  .topmeta a.inc{font-size:12px;color:var(--sub);border:1px solid var(--line2);padding:6px 10px;border-radius:8px}
+  .topmeta a.inc:hover{color:var(--ink);border-color:var(--faint);text-decoration:none}
+
+  /* ---------- body: rail + stage ---------- */
+  .body{display:grid;grid-template-columns:var(--rail) 1fr;min-height:0}
+  .rail{
+    background:var(--shell);border-right:1px solid var(--line);
+    padding:14px 12px;overflow-y:auto;display:flex;flex-direction:column;gap:2px;
+  }
+  .railhd{font-size:10px;text-transform:uppercase;letter-spacing:.09em;color:var(--faint);
+    font-weight:750;padding:2px 8px 8px}
+
+  .item{
+    display:grid;grid-template-columns:20px 1fr;gap:10px;align-items:start;
+    padding:9px 9px;border-radius:9px;cursor:default;border:1px solid transparent;transition:.15s;
+  }
+  .item.clickable{cursor:pointer}
+  .item.clickable:hover{background:var(--panel)}
+  .item.sel{background:var(--raise);border-color:var(--line2)}
+  .item .dot{
+    width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line2);
+    display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--faint);
+    margin-top:1px;flex:none;transition:.2s;background:var(--panel2);
+  }
+  .item>div:last-child{min-width:0}
+  .item .nm{font-size:13px;font-weight:650;color:var(--dim);transition:.2s}
+  .item .sm{font-size:11.5px;color:var(--faint);margin-top:1px;line-height:1.4;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item.run .dot{border-color:var(--teal);color:var(--teal);border-right-color:transparent;
+    animation:spin .8s linear infinite}
+  .item.run .nm{color:var(--ink)}
+  .item.run .sm{color:var(--teal)}
+  .item.ok .dot{border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.13);color:var(--ok)}
+  .item.ok .nm{color:var(--ink)}
+  .item.ok .sm{color:var(--sub)}
+  .item.bad .dot{border-color:var(--bad);background:rgba(248,113,113,.12);color:var(--bad)}
+  .item.bad .nm,.item.bad .sm{color:var(--bad)}
   @keyframes spin{to{transform:rotate(360deg)}}
-  .think .txt{font-size:14px;font-weight:600}
-  .think .sub{font-size:12px;color:var(--sub)}
-  .think.done .orb{border:none;background:var(--ok);box-shadow:0 0 16px -2px var(--ok)} .think.done .orb::before,.think.done .orb::after{display:none}
-  .think.err .orb{border:none;background:var(--bad)} .think.err .orb::before,.think.err .orb::after{display:none}
 
-  /* pipeline rail */
-  .rail{display:flex;align-items:center;gap:0;margin:18px 0 6px;overflow-x:auto;padding-bottom:6px}
-  .stepwrap{display:flex;align-items:center;flex:none}
-  .step{display:flex;flex-direction:column;align-items:center;gap:6px;min-width:82px;opacity:.55;transition:.3s}
-  .step .disc{width:34px;height:34px;border-radius:50%;border:2px solid var(--line2);display:flex;
-    align-items:center;justify-content:center;font-size:15px;background:var(--panel);transition:.3s}
-  .step .lb{font-size:11px;color:var(--sub);font-weight:650}
-  .step.active{opacity:1}
-  .step.active .disc{border-color:var(--teal);color:var(--teal);box-shadow:0 0 0 4px rgba(45,212,191,.14);
-    animation:breathe 1.1s ease-in-out infinite}
-  @keyframes breathe{50%{box-shadow:0 0 0 8px rgba(45,212,191,.05)}}
-  .step.done{opacity:1} .step.done .disc{border-color:var(--ok);background:rgba(52,211,153,.12);color:var(--ok)}
-  .step.err .disc{border-color:var(--bad);color:var(--bad)}
-  .conn{width:26px;height:2px;background:var(--line2);flex:none;transition:.3s}
-  .conn.done{background:var(--ok)}
+  .item.summary{margin-bottom:6px;border-color:var(--line2);background:var(--panel2)}
+  .item.summary .dot{border-radius:6px}
+  .item.summary .nm{color:var(--sub)}
+  .item.summary.sel .nm,.item.summary.live .nm{color:var(--ink)}
+  .item.summary.live .dot{border-color:rgba(52,211,153,.5);background:rgba(52,211,153,.13);color:var(--ok)}
+  .item.summary.live .sm{color:var(--sub)}
+  .rail .sep{height:1px;background:var(--line);margin:8px 6px}
+  .railfoot{margin-top:auto;padding:12px 9px 2px;display:flex;flex-direction:column;gap:7px}
+  .stat{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  .stat .l{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);font-weight:700}
+  .stat .v{font-family:var(--mono);font-size:12px;color:var(--sub)}
 
-  /* stage cards */
-  #stages{display:flex;flex-direction:column;gap:12px;margin-top:16px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:13px;overflow:hidden}
-  .card .hd{display:flex;align-items:center;gap:10px;padding:12px 15px}
-  .card .hd .ic{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;
-    font-size:14px;background:rgba(45,212,191,.12);color:var(--teal);flex:none}
-  .card .hd .nm{font-weight:750;font-size:14.5px}
-  .card .hd .meta{margin-left:auto;font-family:var(--mono);font-size:11px;color:var(--dim)}
-  .card .bd{padding:0 15px 15px}
-  .spinner{width:14px;height:14px;border:2px solid var(--line2);border-top-color:var(--teal);border-radius:50%;
-    display:inline-block;animation:spin .8s linear infinite;vertical-align:-2px}
-  .kv{font-size:13px;color:var(--sub);margin:4px 0} .kv b{color:var(--ink);font-weight:650}
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-top:4px}
-  .stat{background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:9px 11px}
-  .stat .l{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.04em}
-  .stat .v{font-size:14px;font-weight:700;font-family:var(--mono);margin-top:2px;word-break:break-word}
-  .tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
-  .tag{background:rgba(52,211,153,.10);color:var(--ok);border:1px solid rgba(52,211,153,.25);
-    border-radius:999px;padding:3px 9px;font-size:11px;font-weight:600}
-  .badge{background:rgba(129,140,248,.12);color:var(--indigo);border:1px solid rgba(129,140,248,.3);
-    border-radius:6px;padding:2px 8px;font-size:11px;font-weight:650;font-family:var(--mono)}
-  .filechips{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
-  .fchip{background:var(--panel2);border:1px solid var(--line2);border-radius:6px;padding:2px 8px;
+  /* ---------- stage ---------- */
+  .stage{min-width:0;display:grid;grid-template-rows:auto 1fr;background:var(--bg)}
+  .crumb{
+    display:flex;align-items:center;gap:10px;padding:12px 22px;border-bottom:1px solid var(--line);
+    background:var(--panel2);min-height:49px;
+  }
+  .crumb .ttl{font-size:13.5px;font-weight:700}
+  .crumb .desc{font-size:12px;color:var(--dim)}
+  .crumb .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+  .chip{font-family:var(--mono);font-size:11px;color:var(--dim);border:1px solid var(--line2);
+    border-radius:6px;padding:3px 8px;background:var(--panel)}
+  .pane{overflow-y:auto;padding:22px;scroll-behavior:smooth}
+  .pane>*+*{margin-top:16px}
+
+  /* ---------- pane pieces ---------- */
+  .kv{font-size:13px;color:var(--sub)} .kv b{color:var(--ink);font-weight:650}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px}
+  .cell{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  .cell .l{font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+  .cell .v{font-size:14px;font-weight:650;font-family:var(--mono);margin-top:3px;word-break:break-word}
+  .tags{display:flex;flex-wrap:wrap;gap:6px}
+  .tag{background:rgba(52,211,153,.09);color:var(--ok);border:1px solid rgba(52,211,153,.22);
+    border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:600}
+  .tag.n{background:rgba(129,140,248,.10);color:var(--indigo);border-color:rgba(129,140,248,.25);
+    border-radius:6px;font-family:var(--mono)}
+  .tag.w{background:rgba(251,191,36,.09);color:var(--amber);border-color:rgba(251,191,36,.25)}
+  .fchips{display:flex;flex-wrap:wrap;gap:5px}
+  .fchip{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 8px;
     font-family:var(--mono);font-size:11px;color:var(--sub)}
 
-  /* editor-style code block */
-  .editor{border:1px solid var(--line2);border-radius:10px;overflow:hidden;margin-top:9px;background:#070b12}
-  .editor .bar{display:flex;align-items:center;gap:7px;padding:8px 12px;background:#0c1320;border-bottom:1px solid var(--line2)}
-  .editor .bar .dot{width:10px;height:10px;border-radius:50%}
-  .editor .bar .fn{font-family:var(--mono);font-size:11.5px;color:var(--sub);margin-left:4px}
-  .editor .bar .lang{margin-left:auto;font-size:10px;color:var(--dim);text-transform:uppercase;letter-spacing:.05em}
-  .editor pre{margin:0;padding:12px 14px;overflow-x:auto;font-family:var(--mono);font-size:11.5px;
-    line-height:1.65;color:#c9d4e3;counter-reset:ln}
-  .editor pre .ln{display:block;white-space:pre}
-  .editor pre .ln::before{counter-increment:ln;content:counter(ln);display:inline-block;width:26px;
-    margin-right:14px;color:#3a4658;text-align:right;user-select:none}
-  .verdict{display:inline-flex;align-items:center;gap:8px;font-weight:800;font-size:15px;margin:2px 0 6px}
-  .verdict.pass{color:var(--ok)} .verdict.fail{color:var(--bad)}
-  .prbanner{margin-top:14px;padding:14px 16px;border-radius:12px;border:1px solid rgba(45,212,191,.3);
-    background:rgba(45,212,191,.08);font-size:14px}
-  .prbanner a{font-weight:700}
-  .warn{color:var(--amber);font-size:12.5px;margin-top:6px}
+  /* code viewer */
+  .code{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:#050810}
+  .code .bar{display:flex;align-items:center;gap:8px;padding:9px 13px;background:var(--panel2);
+    border-bottom:1px solid var(--line)}
+  .code .bar .fn{font-family:var(--mono);font-size:11.5px;color:var(--sub)}
+  .code .bar .lang{font-size:10px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+  .code .bar .cp{margin-left:auto;font-size:11px;color:var(--dim);background:none;border:1px solid var(--line2);
+    border-radius:6px;padding:3px 9px;cursor:pointer;font-family:inherit}
+  .code .bar .cp:hover{color:var(--ink);border-color:var(--faint)}
+  .code pre{margin:0;padding:12px 0;overflow:auto;max-height:min(58vh,620px);
+    font-family:var(--mono);font-size:11.5px;line-height:1.7;color:#c4d0e0}
+  .code .ln{display:block;white-space:pre;padding-right:14px}
+  .code .ln::before{counter-increment:ln;content:counter(ln);display:inline-block;width:34px;
+    margin-right:14px;color:#2f3949;text-align:right;user-select:none}
+  .code pre{counter-reset:ln}
 
-  /* connect */
-  .h2{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--dim);font-weight:700;margin:30px 0 12px}
-  .steps{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-  @media(max-width:800px){.steps{grid-template-columns:1fr}}
-  .cstep{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px}
-  .cstep h3{font-size:13.5px;font-weight:750;margin-bottom:5px;display:flex;align-items:center;gap:8px}
-  .cstep .num{width:20px;height:20px;border-radius:6px;background:var(--indigo);color:#0a0e16;font-weight:800;
-    font-size:11px;display:flex;align-items:center;justify-content:center}
-  .cstep p{font-size:12.5px;color:var(--sub);margin-bottom:7px}
-  .cstep pre{background:#070b12;border:1px solid var(--line2);border-radius:8px;padding:10px;
-    font-family:var(--mono);font-size:11px;color:#c9d4e3;overflow-x:auto}
-  .foot{margin-top:26px;color:var(--dim);font-size:12px;text-align:center}
+  /* verdict + banners */
+  .verdict{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:12px;
+    border:1px solid var(--line2);background:var(--panel)}
+  .verdict .g{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;
+    justify-content:center;font-size:15px;font-weight:800;flex:none}
+  .verdict.pass .g{background:rgba(52,211,153,.14);color:var(--ok)}
+  .verdict.pass{border-color:rgba(52,211,153,.3)}
+  .verdict.fail .g{background:rgba(248,113,113,.14);color:var(--bad)}
+  .verdict.fail{border-color:rgba(248,113,113,.32)}
+  .verdict .h{font-size:14.5px;font-weight:750}
+  .verdict .s{font-size:12.5px;color:var(--sub)}
+  .checkline{display:flex;gap:9px;font-size:12.5px;color:var(--sub);padding:5px 2px;
+    border-bottom:1px solid var(--line);align-items:flex-start}
+  .checkline:last-child{border-bottom:none}
+  .checkline .m{color:var(--ok);flex:none;font-weight:700}
+  .checkline.bad .m{color:var(--bad)} .checkline.bad{color:#e7a9a9}
+
+  .cta{display:inline-flex;align-items:center;gap:9px;background:linear-gradient(180deg,#38e2ce,#15b0a0);
+    color:#03211d;border-radius:9px;padding:11px 17px;font-weight:750;font-size:13.5px}
+  .cta:hover{filter:brightness(1.07);text-decoration:none}
+  .note{font-size:12.5px;color:var(--amber);display:flex;gap:8px}
+  .err{font-size:12.5px;color:var(--bad);font-family:var(--mono);background:rgba(248,113,113,.06);
+    border:1px solid rgba(248,113,113,.22);border-radius:9px;padding:11px 13px;white-space:pre-wrap}
+
+  /* artifact tabs */
+  .tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+  .tabs button{background:none;border:none;border-bottom:2px solid transparent;color:var(--dim);
+    font:inherit;font-size:12.5px;font-weight:650;padding:8px 12px;cursor:pointer;margin-bottom:-1px;
+    font-family:var(--mono)}
+  .tabs button:hover{color:var(--sub)}
+  .tabs button.on{color:var(--ink);border-bottom-color:var(--teal)}
+
+  /* welcome / empty state */
+  .hero{max-width:760px}
+  .hero h2{font-size:22px;font-weight:750;letter-spacing:-.02em;margin-bottom:8px}
+  .hero p{color:var(--sub);font-size:14px}
+  .flowline{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:var(--mono);
+    font-size:11.5px;color:var(--dim);margin-top:6px}
+  .flowline span.s{border:1px solid var(--line2);border-radius:6px;padding:4px 9px;background:var(--panel);color:var(--sub)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  @media(max-width:1080px){.two{grid-template-columns:1fr}}
+  .box{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:14px 15px}
+  .box h3{font-size:13px;font-weight:750;margin-bottom:6px;display:flex;align-items:center;gap:8px}
+  .box h3 .n{width:19px;height:19px;border-radius:6px;background:rgba(129,140,248,.16);color:var(--indigo);
+    font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+  .box p{font-size:12.5px;color:var(--sub);margin-bottom:8px}
+  .box pre{background:#050810;border:1px solid var(--line2);border-radius:8px;padding:9px 11px;
+    font-family:var(--mono);font-size:11px;color:#c4d0e0;overflow-x:auto}
+  .muted{color:var(--dim);font-size:12px}
+
+  /* running placeholder */
+  .waiting{display:flex;align-items:center;gap:12px;color:var(--sub);font-size:13.5px}
+  .waiting .o{width:16px;height:16px;border-radius:50%;border:2px solid var(--line2);
+    border-top-color:var(--teal);animation:spin .8s linear infinite;flex:none}
+
+  @media(max-width:900px){
+    :root{--rail:100%}
+    .app{grid-template-rows:auto 1fr}
+    .top{flex-wrap:wrap;padding:10px 14px;gap:10px;height:auto}
+    .brand{width:100%}
+    .runbar{margin-left:0;order:3;width:100%;flex-wrap:wrap}
+    .runbar input[type=text]{flex:1 1 100%;min-width:0}
+    .topmeta{order:2;margin-left:auto}
+    .body{grid-template-columns:1fr;grid-template-rows:auto 1fr}
+    .rail{flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--line);
+      padding:10px;align-items:center}
+    .railhd,.railfoot,.rail .sep,.item .sm{display:none}
+    .item{grid-template-columns:20px auto;padding:7px 10px;flex:none}
+    .runbar{max-width:none}
+    .topmeta .m{display:none}
+  }
 </style>
 </head>
 <body>
-<div class="wrap">
-  <header>
-    <div class="brand"><h1>Warden Flow</h1><span class="t">DevOps Studio</span></div>
-    <div class="nav"><a href="/incidents">Incident dashboard →</a></div>
-  </header>
-  <div class="lead">An AI DevOps engineer. Point it at a repo and watch it read your code, write a <b>Dockerfile</b>, a <b>CI/CD pipeline</b> and <b>deploy manifests</b>, then open a pull request — live, stage by stage.</div>
-  <div class="models">Running on <b>Azure OpenAI GPT‑5.6</b> when live · Gemini offline · every node returns a typed object.</div>
+<div class="app">
 
-  <div class="runpanel">
+  <header class="top">
+    <div class="brand">
+      <div class="mark"></div>
+      <h1>Warden Flow</h1>
+      <span class="t">DevOps Studio</span>
+    </div>
+
     <div class="runbar">
-      <div class="field">
-        <label>Project directory (on the server) or GitHub URL</label>
-        <input id="target" value="examples/checkout-svc" spellcheck="false" placeholder="https://github.com/you/your-repo" />
+      <input type="text" id="target" spellcheck="false" value="examples/checkout-svc"
+             placeholder="https://github.com/you/your-repo  ·  or a local path" />
+      <label class="tg" id="tgLive"><input type="checkbox" id="live" /> live model</label>
+      <label class="tg" id="tgPr"><input type="checkbox" id="openpr" /> open PR</label>
+      <button class="run" id="runbtn">Run workflow</button>
+    </div>
+
+    <div class="topmeta">
+      <div class="m" id="mTokens"><b>—</b> tok</div>
+      <div class="m" id="mTime"><b>00:00</b></div>
+      <a class="inc" href="/incidents">Incident dashboard</a>
+    </div>
+  </header>
+
+  <div class="body">
+    <aside class="rail" id="rail"></aside>
+    <section class="stage">
+      <div class="crumb">
+        <div>
+          <div class="ttl" id="crumbTitle">Delivery</div>
+          <div class="desc" id="crumbDesc">Point Warden Flow at a repository and run the workflow.</div>
+        </div>
+        <div class="right" id="crumbRight"></div>
       </div>
-      <label class="toggle"><input type="checkbox" id="live" /> run live<span>real model</span></label>
-      <label class="toggle"><input type="checkbox" id="openpr" /> open PR<span>on your repo</span></label>
-      <button class="run" id="runbtn" onclick="run()">▶ Run</button>
-    </div>
-
-    <div class="think" id="think">
-      <div class="orb" id="orb"></div>
-      <div><div class="txt" id="thinkTxt">Starting…</div><div class="sub" id="thinkSub"></div></div>
-    </div>
-
-    <div class="rail" id="rail"></div>
-    <div id="stages"></div>
+      <div class="pane" id="pane"></div>
+    </section>
   </div>
 
-  <div class="h2">Connect your project</div>
-  <div class="steps">
-    <div class="cstep"><h3><span class="num">1</span>Point it at your repo</h3>
-      <p>Paste a GitHub URL above and tick <b>run live</b>, or from your project folder:</p>
-      <pre>warden-deliver --live</pre></div>
-    <div class="cstep"><h3><span class="num">2</span>Open a PR (token)</h3>
-      <p>Tick <b>open PR</b> + set <code>GITHUB_TOKEN</code> (Contents · Workflows · Pull requests: write) to push the DevOps back as a pull request.</p>
-      <pre>GITHUB_TOKEN=github_pat_…</pre></div>
-    <div class="cstep"><h3><span class="num">3</span>Model (optional)</h3>
-      <p>Default Gemini; for Azure GPT‑5.6 add to <code>.env</code>:</p>
-      <pre>DELIVER_MODEL=azure/gpt-5.6-sol</pre></div>
-    <div class="cstep"><h3><span class="num">4</span>Deploy</h3>
-      <p>Merge the PR → the generated pipeline builds, pushes to ACR and deploys, using your repo secrets.</p>
-      <pre>make bench-deliver   # single prompt 0/5 vs workflow 5/5</pre></div>
-  </div>
-  <div class="foot">Warden Flow · one structured-prompting engine · nodes are version-controlled manifests</div>
 </div>
 
 <script>
-const STEPS = [
-  {key:"clone",       label:"Clone",       icon:"⬇"},
-  {key:"assess",      label:"Assess",      icon:"🔍"},
-  {key:"containerize",label:"Containerize",icon:"📦"},
-  {key:"pipeline",    label:"Pipeline",    icon:"⚙"},
-  {key:"deploy_plan", label:"Deploy",      icon:"🚀"},
-  {key:"verify_artifacts",label:"Verify",  icon:"✓"},
-  {key:"pr",          label:"PR",          icon:"📬"},
+/* ------------------------------------------------------------------ */
+/* Node definitions — these mirror the SSE `stage` keys exactly.        */
+/* ------------------------------------------------------------------ */
+const NODES = [
+  {key:"clone",            label:"Clone",       desc:"Fetch the repository and list its files."},
+  {key:"assess",           label:"Assess",      desc:"Read the code: language, entrypoint, ports, dependencies."},
+  {key:"containerize",     label:"Containerize",desc:"Write a production Dockerfile from the assessed profile."},
+  {key:"pipeline",         label:"Pipeline",    desc:"Write CI/CD: build, test, scan, push, deploy."},
+  {key:"deploy_plan",      label:"Deploy plan", desc:"Write deploy manifests, rollout strategy and rollback."},
+  {key:"verify_artifacts", label:"Verify",      desc:"Gate every generated artifact before a human sees it."},
+  {key:"pr",               label:"Pull request",desc:"The human review boundary — the only write primitive."},
 ];
-const TITLE = {clone:"Clone",assess:"Assess",containerize:"Containerize",pipeline:"Pipeline",
-  deploy_plan:"Deploy Plan",verify_artifacts:"Verify",pr:"Pull request"};
-const esc = s => (s==null?"":String(s)).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
-const code = t => (esc(t).split("\n").map(l=>`<span class="ln">${l||" "}</span>`).join(""));
-const $ = id => document.getElementById(id);
+const NODE = Object.fromEntries(NODES.map(n=>[n.key,n]));
 
-function buildRail(){
-  const r=$("rail"); r.innerHTML="";
-  STEPS.forEach((s,i)=>{
-    const w=document.createElement("div"); w.className="stepwrap";
-    w.innerHTML=`<div class="step" id="st-${s.key}"><div class="disc">${s.icon}</div><div class="lb">${s.label}</div></div>`
-      + (i<STEPS.length-1?`<div class="conn" id="cn-${s.key}"></div>`:"");
-    r.appendChild(w);
+/* ------------------------------------------------------------------ */
+const $  = id => document.getElementById(id);
+const esc = s => (s==null?"":String(s)).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const numfmt = n => n>=1000 ? (n/1000).toFixed(1)+"k" : String(n||0);
+
+const state = {
+  phase:"idle",            // idle | running | done | error
+  view:"summary",          // "summary" | node key
+  follow:true,             // auto-advance the pane to the active node
+  started:0, timer:null,
+  tokens:0,
+  node:{},                 // key -> {status, thinking, tokens, model, error}
+  out:{},                  // key -> structured output
+  clone:null, pr:null, runId:null,
+  artifact:0,              // selected artifact tab on the summary view
+};
+
+/* ---------------- rail ---------------- */
+function summaryLine(key){
+  const o = state.out[key], n = state.node[key] || {};
+  if(n.status==="run")  return n.thinking || "working…";
+  if(n.status==="bad")  return n.error || "failed";
+  if(n.status!=="ok")   return NODE[key].desc;
+  switch(key){
+    case "clone":        return (state.clone?.fileCount ?? 0) + " files resolved";
+    case "assess":       return [o?.language,o?.framework].filter(Boolean).join(" · ") || "profiled";
+    case "containerize": return o?.base_image || "Dockerfile written";
+    case "pipeline":     return (o?.stages||[]).join(" → ") || "workflow written";
+    case "deploy_plan":  return (o?.manifests||[]).length + " manifests · " + (o?.strategy||"");
+    case "verify_artifacts": return o?.passed ? "passed — safe to review" : "failed the gate";
+    case "pr":           return state.pr?.pr_url ? "opened" : (state.pr ? "pushed" : "skipped");
+  }
+  return "done";
+}
+
+function renderRail(){
+  const r = $("rail");
+  const done = NODES.filter(n=>state.node[n.key]?.status==="ok").length;
+  const glyph = k => {
+    const s = state.node[k]?.status;
+    if(s==="ok")  return "✓";
+    if(s==="bad") return "!";
+    if(s==="run") return "";
+    return "";
+  };
+  const cls = k => {
+    const s = state.node[k]?.status;
+    return s==="ok"?"ok":s==="bad"?"bad":s==="run"?"run":"";
+  };
+  const clickable = k => state.node[k]?.status ? " clickable" : "";
+
+  r.innerHTML =
+    `<div class="railhd">Run</div>` +
+    `<div class="item summary clickable${state.view==="summary"?" sel":""}${state.phase==="done"?" live":""}" data-view="summary">
+       <div class="dot">${state.phase==="done"?"✓":"◆"}</div>
+       <div><div class="nm">Delivery summary</div>
+       <div class="sm">${esc(state.phase==="idle"?"not started":state.phase==="running"?done+" of "+NODES.length+" nodes":state.phase==="done"?"complete — artifacts ready":"stopped")}</div></div>
+     </div>` +
+    `<div class="sep"></div><div class="railhd">Nodes</div>` +
+    NODES.map(n=>`
+      <div class="item ${cls(n.key)}${clickable(n.key)}${state.view===n.key?" sel":""}" data-view="${n.key}">
+        <div class="dot">${glyph(n.key)}</div>
+        <div><div class="nm">${esc(n.label)}</div><div class="sm">${esc(summaryLine(n.key))}</div></div>
+      </div>`).join("") +
+    `<div class="railfoot">
+       <div class="stat"><span class="l">nodes</span><span class="v">${done}/${NODES.length}</span></div>
+       <div class="stat"><span class="l">tokens</span><span class="v">${numfmt(state.tokens)}</span></div>
+       <div class="stat"><span class="l">model</span><span class="v">${esc($("live").checked?"live":"scripted")}</span></div>
+     </div>`;
+
+  r.querySelectorAll(".item.clickable").forEach(el=>{
+    el.onclick = () => { state.follow=false; select(el.dataset.view); };
   });
 }
-buildRail();
 
-let usePR=false;
-function setStep(key,state){ const e=$("st-"+key); if(e){ e.classList.remove("active","done","err"); if(state) e.classList.add(state);}
-  const c=$("cn-"+key); if(c && state==="done") c.classList.add("done"); }
-function think(txt,sub,mode){ const t=$("think"); t.className="think on"+(mode?(" "+mode):""); $("thinkTxt").textContent=txt; $("thinkSub").innerHTML=sub||""; }
+/* ---------------- pane ---------------- */
+function select(view){
+  state.view = view;
+  const isSum = view==="summary";
+  $("crumbTitle").textContent = isSum ? "Delivery summary" : NODE[view].label;
+  $("crumbDesc").textContent  = isSum
+    ? (state.phase==="idle" ? "Point Warden Flow at a repository and run the workflow."
+      : state.phase==="running" ? "Running — each node hands a typed object to the next."
+      : "Every artifact the workflow produced, in one place.")
+    : NODE[view].desc;
 
-function card(key){
-  let c=$("card-"+key);
-  if(!c){ c=document.createElement("div"); c.className="card"; c.id="card-"+key;
-    const s=STEPS.find(x=>x.key===key)||{icon:"•"};
-    c.innerHTML=`<div class="hd"><div class="ic">${s.icon}</div><div class="nm">${TITLE[key]||key}</div><div class="meta" id="meta-${key}"></div></div><div class="bd" id="bd-${key}"><span class="spinner"></span> working…</div>`;
-    $("stages").appendChild(c);
+  const n = state.node[view] || {};
+  $("crumbRight").innerHTML = (!isSum && n.status==="ok")
+    ? `<span class="chip">${numfmt(n.tokens||0)} tok</span><span class="chip">${esc(n.model||"")}</span>`
+    : "";
+
+  $("pane").innerHTML = isSum ? viewSummary() : viewNode(view);
+  $("pane").scrollTop = 0;
+  wireCopy();
+  renderRail();
+}
+
+function codeBlock(fn, lang, content){
+  const id = "c"+Math.random().toString(36).slice(2,9);
+  const lines = esc(content||"").split("\n").map(l=>`<span class="ln">${l||" "}</span>`).join("");
+  return `<div class="code">
+    <div class="bar"><span class="fn">${esc(fn)}</span><span class="lang">${esc(lang)}</span>
+      <button class="cp" data-copy="${id}">copy</button></div>
+    <pre id="${id}">${lines}</pre></div>`;
+}
+function wireCopy(){
+  document.querySelectorAll("[data-copy]").forEach(b=>{
+    b.onclick = () => {
+      const pre = $(b.dataset.copy); if(!pre) return;
+      navigator.clipboard?.writeText(pre.innerText).then(()=>{
+        b.textContent="copied"; setTimeout(()=>b.textContent="copy",1400);
+      }).catch(()=>{});
+    };
+  });
+}
+
+/* --- per-node views --- */
+function viewNode(key){
+  const n = state.node[key] || {}, o = state.out[key] || {};
+  if(n.status==="bad") return `<div class="err">${esc(n.error||"failed")}</div>`;
+  if(n.status!=="ok")  return `<div class="waiting"><span class="o"></span>${esc(n.thinking||"Waiting to run.")}</div>`;
+
+  if(key==="clone"){
+    const c = state.clone || {};
+    return `<div class="kv"><b>${c.fileCount||0}</b> files ${c.remote?"cloned from GitHub":"read from disk"}</div>
+      <div class="fchips">${(c.files||[]).map(f=>`<span class="fchip">${esc(f)}</span>`).join("")}</div>`;
   }
-  return c;
+  if(key==="assess"){
+    const cell=(l,v)=>`<div class="cell"><div class="l">${l}</div><div class="v">${esc(v??"—")}</div></div>`;
+    return `<div class="grid">
+        ${cell("language",o.language)}${cell("framework",o.framework)}
+        ${cell("entrypoint",o.entrypoint)}${cell("ports",(o.ports||[]).join(", "))}
+        ${cell("build system",o.build_system)}
+        ${cell("dependencies",(o.dependencies||[]).length||"—")}
+      </div>
+      ${o.notes?`<div class="kv">${esc(o.notes)}</div>`:""}`;
+  }
+  if(key==="containerize"){
+    return `<div class="grid">
+        <div class="cell"><div class="l">base image</div><div class="v">${esc(o.base_image)}</div></div>
+        <div class="cell"><div class="l">multi-stage</div><div class="v">${o.multistage?"yes":"no"}</div></div>
+        <div class="cell"><div class="l">non-root</div><div class="v">${o.runs_as_nonroot?"yes":"no"}</div></div>
+      </div>
+      <div class="tags">${(o.security_notes||[]).map(s=>`<span class="tag">${esc(s)}</span>`).join("")}</div>
+      ${codeBlock("Dockerfile","dockerfile",o.content)}`;
+  }
+  if(key==="pipeline"){
+    return `<div class="tags">${(o.stages||[]).map(s=>`<span class="tag n">${esc(s)}</span>`).join("")}</div>
+      ${codeBlock(".github/workflows/deliver.yml","yaml",o.content)}`;
+  }
+  if(key==="deploy_plan"){
+    return `<div class="grid">
+        <div class="cell"><div class="l">strategy</div><div class="v">${esc(o.strategy)}</div></div>
+        <div class="cell"><div class="l">manifests</div><div class="v">${(o.manifests||[]).length}</div></div>
+      </div>
+      ${o.rollback?`<div class="kv"><b>Rollback:</b> ${esc(o.rollback)}</div>`:""}
+      ${(o.manifests||[]).map(m=>codeBlock(m.path,"yaml",m.content)).join("")}`;
+  }
+  if(key==="verify_artifacts"){
+    const pass = !!o.passed;
+    return `<div class="verdict ${pass?"pass":"fail"}">
+        <div class="g">${pass?"✓":"✕"}</div>
+        <div><div class="h">${pass?"Passed — safe to hand to a reviewer":"Failed the gate"}</div>
+        <div class="s">${(o.checks||[]).length} checks · ${(o.issues||[]).length} issues</div></div></div>
+      <div>${(o.checks||[]).map(c=>`<div class="checkline"><span class="m">✓</span><span>${esc(c)}</span></div>`).join("")}
+      ${(o.issues||[]).map(i=>`<div class="checkline bad"><span class="m">✕</span><span>${esc(i)}</span></div>`).join("")}</div>
+      <div class="muted">These are static checks on the generated text. They do not execute the pipeline.</div>`;
+  }
+  if(key==="pr") return prBlock();
+  return "";
 }
-function bd(key){ return $("bd-"+key); }
 
-function editor(fn,color,lang,content){
-  return `<div class="editor"><div class="bar"><span class="dot" style="background:${color}"></span><span class="fn">${esc(fn)}</span><span class="lang">${lang}</span></div><pre>${code(content)}</pre></div>`;
+function prBlock(){
+  const pr = state.pr;
+  if(!pr) return `<div class="muted">No pull request was requested for this run.</div>`;
+  if(pr.pr_url){
+    let h = `<a class="cta" href="${esc(pr.pr_url)}" target="_blank" rel="noopener">Review the pull request →</a>
+      <div class="kv">${esc(pr.pr_url)}</div>`;
+    if((pr.skipped||[]).length)
+      h += `<div class="note"><span>⚠</span><span>Skipped ${pr.skipped.map(s=>esc(s.path)).join(", ")} — the token needs the <b>Workflows</b> permission to include the CI file.</span></div>`;
+    return h;
+  }
+  if(pr.compare_url){
+    return `<a class="cta" href="${esc(pr.compare_url)}" target="_blank" rel="noopener">Open the pull request →</a>
+      <div class="kv">Files pushed to <b>${esc(pr.branch)}</b>.</div>
+      <div class="note"><span>⚠</span><span>Add <b>Pull requests: write</b> to the token and Warden Flow will open it for you.</span></div>`;
+  }
+  return `<div class="err">${esc(pr.detail||pr.error||"Could not open a pull request.")}</div>`;
 }
 
-function renderClone(ev){
-  const files=(ev.files||[]).map(f=>`<span class="fchip">${esc(f)}</span>`).join("");
-  bd("clone").innerHTML = editor(ev.remote?"$ git clone "+($("target").value):"local directory","#2dd4bf","shell",
-      (ev.remote?"Cloning "+$("target").value+"\n":"")+"Resolved "+ev.fileCount+" files")
-    + `<div class="filechips">${files}</div>`;
+/* --- summary view --- */
+function artifacts(){
+  const a = [];
+  if(state.out.containerize?.content) a.push({name:"Dockerfile",lang:"dockerfile",body:state.out.containerize.content});
+  if(state.out.pipeline?.content)     a.push({name:".github/workflows/deliver.yml",lang:"yaml",body:state.out.pipeline.content});
+  (state.out.deploy_plan?.manifests||[]).forEach(m=>a.push({name:m.path,lang:"yaml",body:m.content}));
+  return a;
 }
-function renderAssess(o){
-  bd("assess").innerHTML = `<div class="grid">
-    <div class="stat"><div class="l">language</div><div class="v">${esc(o.language)}</div></div>
-    <div class="stat"><div class="l">framework</div><div class="v">${esc(o.framework)}</div></div>
-    <div class="stat"><div class="l">entrypoint</div><div class="v">${esc(o.entrypoint)}</div></div>
-    <div class="stat"><div class="l">ports</div><div class="v">${esc(JSON.stringify(o.ports||[]))}</div></div>
-    <div class="stat"><div class="l">build</div><div class="v">${esc(o.build_system)}</div></div>
-   </div>` + (o.notes?`<div class="kv">${esc(o.notes)}</div>`:"");
+
+function viewSummary(){
+  if(state.phase==="idle") return viewWelcome();
+
+  const arts = artifacts();
+  const v = state.out.verify_artifacts;
+  const done = NODES.filter(n=>state.node[n.key]?.status==="ok").length;
+  const secs = state.started ? Math.round((Date.now()-state.started)/1000) : 0;
+
+  let h = "";
+
+  if(state.phase==="running"){
+    const active = NODES.find(n=>state.node[n.key]?.status==="run");
+    h += `<div class="waiting"><span class="o"></span>${esc(active ? (NODE[active.key].label+" — "+(state.node[active.key].thinking||"working…")) : "Starting…")}</div>`;
+  } else if(v){
+    const pass = !!v.passed;
+    h += `<div class="verdict ${pass?"pass":"fail"}">
+      <div class="g">${pass?"✓":"✕"}</div>
+      <div><div class="h">${pass?"Artifacts validated — ready for human review":"The gate rejected these artifacts"}</div>
+      <div class="s">${done} nodes · ${numfmt(state.tokens)} tokens · ${secs}s · ${(v.issues||[]).length} open issue${(v.issues||[]).length===1?"":"s"}</div></div></div>`;
+  }
+
+  if(state.phase==="done" && state.pr) h += prBlock();
+
+  if(arts.length){
+    const i = Math.min(state.artifact, arts.length-1);
+    h += `<div class="tabs" id="artTabs">` +
+      arts.map((a,idx)=>`<button class="${idx===i?"on":""}" data-art="${idx}">${esc(a.name.split("/").pop())}</button>`).join("") +
+      `</div>` + codeBlock(arts[i].name, arts[i].lang, arts[i].body);
+  } else if(state.phase!=="running"){
+    h += `<div class="muted">No artifacts were produced.</div>`;
+  }
+
+  if(state.phase==="done"){
+    h += `<div class="muted">Run <code>${esc($("live").checked?"warden bench-deliver --live":"make bench-deliver")}</code> to score this workflow against a single prompt on the same service.</div>`;
+  }
+  return h;
 }
-function renderContainerize(o){
-  const notes=(o.security_notes||[]).map(n=>`<span class="tag">✓ ${esc(n)}</span>`).join("");
-  bd("containerize").innerHTML = `<div class="kv">base <b>${esc(o.base_image)}</b> · multistage <b>${o.multistage}</b> · non-root <b>${o.runs_as_nonroot}</b></div>`
-    + `<div class="tags">${notes}</div>` + editor("Dockerfile","#0db7ed","dockerfile",o.content);
+
+function viewWelcome(){
+  return `
+  <div class="hero">
+    <h2>An AI DevOps engineer for your repository.</h2>
+    <p>Point it at a service. It reads the code, writes the container, the CI/CD pipeline and the deploy
+       manifests, validates all three, and hands them back as a pull request you review. Each node is a
+       separate prompt returning a typed object — no single mega-prompt makes every infrastructure decision.</p>
+    <div class="flowline">
+      <span class="s">assess</span>→<span class="s">containerize</span>→<span class="s">pipeline</span>
+      →<span class="s">deploy plan</span>→<span class="s">verify</span>→<span class="s">human review</span>
+    </div>
+  </div>
+  <div class="two">
+    <div class="box"><h3><span class="n">1</span>Point it at a repo</h3>
+      <p>Paste a GitHub URL above, or keep the bundled sample to see the whole workflow run offline for free.</p>
+      <pre>examples/checkout-svc</pre></div>
+    <div class="box"><h3><span class="n">2</span>Run it live</h3>
+      <p>Tick <b>live model</b>. Configure a provider in <code>.env</code> — Gemini and Vertex directly, Azure OpenAI, OpenAI and Anthropic through LiteLLM.</p>
+      <pre>DELIVER_MODEL=azure/gpt-5.6-sol</pre></div>
+    <div class="box"><h3><span class="n">3</span>Get a pull request</h3>
+      <p>Tick <b>open PR</b> to push the generated DevOps back to your repo for review. Needs Contents, Workflows and Pull requests write.</p>
+      <pre>GITHUB_TOKEN=github_pat_…</pre></div>
+    <div class="box"><h3><span class="n">4</span>Deploy on merge</h3>
+      <p>Merging the PR runs the generated pipeline: build, test, scan, push to your registry, deploy the exact commit image.</p>
+      <pre>make bench-deliver   # workflow vs single prompt</pre></div>
+  </div>
+  <div class="muted">Warden Flow also runs <a href="/incidents">OPERATE</a> — the reactive incident workflow that
+    triages an alert, diagnoses it, and proposes a GitOps fix through the same governed spine.</div>`;
 }
-function renderPipeline(o){
-  const st=(o.stages||[]).map(s=>`<span class="badge">${esc(s)}</span>`).join(" ");
-  bd("pipeline").innerHTML = `<div class="tags">${st}</div>` + editor(".github/workflows/deliver.yml","#818cf8","yaml",o.content);
+
+/* ---------------- event handling ---------------- */
+function setNode(key, patch){
+  state.node[key] = Object.assign({}, state.node[key], patch);
 }
-function renderDeploy(o){
-  let h=`<div class="kv">strategy <b>${esc(o.strategy)}</b> · rollback: ${esc(o.rollback)}</div>`;
-  (o.manifests||[]).forEach(m=> h+=editor(m.path,"#326ce5","yaml",m.content));
-  bd("deploy_plan").innerHTML=h;
-}
-function renderVerify(o){
-  const v=o.passed?`<span class="verdict pass">✓ PASSED — safe to review</span>`:`<span class="verdict fail">✗ FAILED</span>`;
-  const checks=(o.checks||[]).map(c=>`<div class="kv">✓ ${esc(c)}</div>`).join("");
-  const issues=(o.issues||[]).map(i=>`<div class="kv" style="color:var(--bad)">✗ ${esc(i)}</div>`).join("");
-  bd("verify_artifacts").innerHTML=v+checks+issues;
-}
-function renderPR(pr){
-  const b=bd("pr");
-  if(!pr){ b.innerHTML=`<div class="kv">—</div>`; return; }
-  if(pr.pr_url){ let h=`<div class="prbanner">📬 <b>Pull request opened:</b> <a href="${esc(pr.pr_url)}" target="_blank">${esc(pr.pr_url)}</a></div>`;
-    if((pr.skipped||[]).length) h+=`<div class="warn">skipped ${pr.skipped.map(s=>esc(s.path)).join(", ")} — add “Workflows” permission to include the CI file</div>`;
-    b.innerHTML=h; }
-  else if(pr.compare_url){ b.innerHTML=`<div class="prbanner">📦 Files pushed to <b>${esc(pr.branch)}</b> — <a href="${esc(pr.compare_url)}" target="_blank">open the pull request →</a><div class="warn">add “Pull requests: write” to your token to auto-open it</div></div>`; }
-  else { b.innerHTML=`<div class="warn">PR: ${esc(pr.detail||pr.error||"failed")}</div>`; }
-}
-const RENDER={assess:renderAssess,containerize:renderContainerize,pipeline:renderPipeline,deploy_plan:renderDeploy,verify_artifacts:renderVerify};
 
 function handle(ev){
-  const k=ev.stage;
-  if(k==="error"){ think("Something went wrong","<span style='color:var(--bad)'>"+esc(ev.error)+"</span>","err"); return; }
-  if(k==="complete"){ think("✓ Delivery complete", ev.totalTokens+" tokens · "+($("live").checked?"Azure GPT‑5.6":"offline"), "done"); return; }
+  const k = ev.stage;
+
+  if(k==="error"){ fail(ev.error); return; }
+
+  if(k==="complete"){
+    state.phase="done"; state.runId=ev.id;
+    state.tokens = ev.totalTokens ?? state.tokens;
+    if(ev.pr) state.pr = ev.pr;
+    stopTimer();
+    select("summary");
+    return;
+  }
+
+  if(!NODE[k]) return;
 
   if(ev.status==="start"){
-    if(STEPS.find(s=>s.key===k)) setStep(k,"active");
-    think((TITLE[k]||k)+"…", esc(ev.thinking||""), null);
-    card(k);
-  } else if(ev.status==="done"){
-    setStep(k,"done");
-    if(k==="clone"){ renderClone(ev); }
-    else if(k==="pr"){ card("pr"); renderPR(ev.pr); }
-    else if(RENDER[k]){ RENDER[k](ev.output||{}); $("meta-"+k).textContent = (ev.tokens||0)+" tok · "+(ev.model||""); }
-  } else if(ev.status==="error"){
-    setStep(k,"err"); const b=bd(k); if(b) b.innerHTML=`<div class="warn">${esc(ev.error)}</div>`;
-    think("Stopped at "+(TITLE[k]||k), esc(ev.error), "err");
+    setNode(k,{status:"run", thinking:ev.thinking||""});
+    if(state.follow) select(k); else renderRail();
+    if(state.view==="summary"){ $("pane").innerHTML = viewSummary(); wireCopy(); }
+  }
+  else if(ev.status==="done"){
+    setNode(k,{status:"ok", tokens:ev.tokens||0, model:ev.model||""});
+    if(k==="clone")      state.clone = ev;
+    else if(k==="pr")    state.pr = ev.pr;
+    else                 state.out[k] = ev.output || {};
+    state.tokens += (ev.tokens||0);
+    $("mTokens").innerHTML = `<b>${numfmt(state.tokens)}</b> tok`;
+    if(state.view===k || state.follow) select(k); else renderRail();
+  }
+  else if(ev.status==="error"){
+    setNode(k,{status:"bad", error:ev.error||"failed"});
+    state.phase="error"; stopTimer();
+    select(k);
   }
 }
 
-async function run(){
-  const btn=$("runbtn"); const target=$("target").value.trim()||"examples/checkout-svc";
-  const live=$("live").checked, pr=$("openpr").checked;
-  btn.disabled=true; $("stages").innerHTML=""; buildRail();
-  think("Starting…", live?"cloning and running on your model":"running the sample offline", null);
-  try{
-    const resp=await fetch("/api/deliver/stream",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({target,live,pr})});
-    if(!resp.ok || !resp.body) throw new Error("HTTP "+resp.status);
-    const reader=resp.body.getReader(), dec=new TextDecoder(); let buf="";
-    while(true){
-      const {value,done}=await reader.read(); if(done) break;
-      buf+=dec.decode(value,{stream:true});
-      let i; while((i=buf.indexOf("\n\n"))>=0){ const chunk=buf.slice(0,i); buf=buf.slice(i+2);
-        if(chunk.startsWith("data:")){ try{ handle(JSON.parse(chunk.slice(5).trim())); }catch(e){} } }
-    }
-  }catch(e){ think("Run failed", esc(e.message)+" — is the server running?", "err"); }
-  finally{ btn.disabled=false; }
+function fail(msg){
+  state.phase="error"; stopTimer();
+  $("pane").innerHTML = `<div class="err">${esc(msg||"The run failed.")}</div>`;
+  $("crumbTitle").textContent="Run failed";
+  $("crumbDesc").textContent="Nothing was written to your repository.";
+  renderRail();
 }
+
+/* ---------------- timer ---------------- */
+function startTimer(){
+  state.started = Date.now();
+  stopTimer();
+  state.timer = setInterval(()=>{
+    const s = Math.floor((Date.now()-state.started)/1000);
+    $("mTime").innerHTML = `<b>${String(Math.floor(s/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}</b>`;
+  }, 500);
+}
+function stopTimer(){ if(state.timer){ clearInterval(state.timer); state.timer=null; } }
+
+/* ---------------- run ---------------- */
+async function run(){
+  const btn = $("runbtn");
+  const target = $("target").value.trim() || "examples/checkout-svc";
+  const live = $("live").checked, pr = $("openpr").checked;
+
+  Object.assign(state,{phase:"running",view:"summary",follow:true,tokens:0,
+    node:{},out:{},clone:null,pr:null,runId:null,artifact:0});
+  btn.disabled = true;
+  $("mTokens").innerHTML = "<b>0</b> tok";
+  startTimer();
+  select("summary");
+
+  try{
+    const resp = await fetch("/api/deliver/stream",{
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({target,live,pr})
+    });
+    if(!resp.ok || !resp.body) throw new Error("HTTP "+resp.status);
+    const reader = resp.body.getReader(), dec = new TextDecoder();
+    let buf = "";
+    for(;;){
+      const {value,done} = await reader.read();
+      if(done) break;
+      buf += dec.decode(value,{stream:true});
+      let i;
+      while((i = buf.indexOf("\n\n")) >= 0){
+        const chunk = buf.slice(0,i); buf = buf.slice(i+2);
+        if(chunk.startsWith("data:")){
+          try{ handle(JSON.parse(chunk.slice(5).trim())); }catch(e){}
+        }
+      }
+    }
+    if(state.phase==="running"){ state.phase="done"; stopTimer(); select("summary"); }
+  }catch(e){
+    fail(e.message + " — is the dashboard server still running?");
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+/* ---------------- wiring ---------------- */
+$("runbtn").onclick = run;
+$("target").addEventListener("keydown", e => { if(e.key==="Enter") run(); });
+["live","openpr"].forEach(id=>{
+  const cb = $(id), wrap = cb.closest(".tg");
+  const sync = () => { wrap.classList.toggle("on", cb.checked); renderRail(); };
+  cb.addEventListener("change", sync); sync();
+});
+document.addEventListener("click", e=>{
+  const t = e.target.closest("[data-art]");
+  if(t){ state.artifact = +t.dataset.art; $("pane").innerHTML = viewSummary(); wireCopy(); }
+});
+
+select("summary");
 </script>
 </body>
 </html>

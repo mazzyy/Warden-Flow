@@ -20,6 +20,7 @@ from warden.agents.runtime import AgentRun, run_agent
 from warden.control_plane.store import Store
 from warden.delivery.targets import deploy_hint as _deploy_hint
 from warden.delivery.targets import deploy_summary as _deploy_summary
+from warden.delivery.targets import pipeline_rules as _pipeline_rules
 from warden.llm import deliver_model_override
 from warden.models import (
     AgentManifest,
@@ -124,10 +125,16 @@ async def deliver(
         "pipeline",
         "Write a CI/CD pipeline for this containerized service.\n" + profile_block
         + f"\nBase image: {dockerfile.base_image}\n\n"
-        "Stages: build, test, scan, push (main only), deploy. Reference secrets, "
-        "do not hardcode them; use least-privilege permissions.\n\n" + _deploy_hint(),
+        + _pipeline_rules() + "\n\n" + _deploy_hint(),
     )
     pipeline = result.pipeline.parse(Pipeline)
+    # A node that returns nothing parseable is a FAILED node, not an optional
+    # one. Letting it through hands Verify the literal string "(none)" for the
+    # pipeline and lets it pass a delivery that has no CI at all — the gate
+    # reporting green on an artifact that does not exist is worse than no gate.
+    if pipeline is None:
+        result.stopped_at = "pipeline"
+        return result
 
     # -- 4. Deploy plan (handoff: profile + dockerfile) --------------------
     result.deploy_plan = await node(
@@ -140,6 +147,9 @@ async def deliver(
         + _deploy_summary(),
     )
     deploy_plan = result.deploy_plan.parse(DeployPlan)
+    if deploy_plan is None:
+        result.stopped_at = "deploy_plan"
+        return result
 
     # -- 5. Verify (handoff: everything generated) — the gate before review
     manifests_text = "\n".join(
@@ -246,8 +256,7 @@ async def deliver_events(
                 df = parsed.get("containerize")
                 prompt = ("Write a CI/CD pipeline for this containerized service.\n" + pblock
                           + f"\nBase image: {df.base_image if df else 'the generated image'}\n\n"
-                          "Stages: build, test, scan, push (main only), deploy. Reference secrets, "
-                          "do not hardcode; least-privilege permissions.\n\n" + _deploy_hint())
+                          + _pipeline_rules() + "\n\n" + _deploy_hint())
             elif name == "deploy_plan":
                 prompt = ("Write the Kubernetes manifests and rollout plan for this service.\n"
                           + pblock + "\nSet resource requests/limits, liveness/readiness probes, a "
@@ -272,8 +281,14 @@ async def deliver_events(
             return
         if schema is not None:
             obj = run.parse(schema)
-            if obj is not None:
-                parsed[name] = obj
+            if obj is None:
+                # Same rule as the batch path: an unparseable node is a failed
+                # node. Stop here rather than letting Verify bless a delivery
+                # with a missing artifact.
+                yield {"stage": name, "status": "error",
+                       "error": f"{name} returned no valid {schema.__name__}"}
+                return
+            parsed[name] = obj
         total_tokens += run.run.total_tokens
         yield {"stage": name, "status": "done", "model": run.run.model,
                "tokens": run.run.total_tokens, "output": run.structured or {}}
